@@ -4,7 +4,7 @@
 # Helps you mount and unmount LUKS partitions.
 #
 # Author: Marco Tangaro
-# Mail: ma.tangaro@reate the LUKS virtual volume 
+# Mail: ma.tangaro@gmail.com 
 #
 # Please find the original script here: https://github.com/JohnTroony/LUKS-OPs/blob/master/luks-ops.sh
 # All credits to John Troon.

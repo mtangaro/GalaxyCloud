@@ -1,13 +1,22 @@
 #!/bin/bash
-
-
-#____________________________________
-LOG_FILE="/tmp/fast_cryptsetup.log"
-
-#exec 3>&1 1>>${LOG_FILE} 2>&1
+# Bash script for managing LUKS volumes in Linux:
+# You can create a virtual encrypted Linux FS volume from a file block.
+# Helps you mount and unmount LUKS partitions.
+#
+# Author: Marco Tangaro
+#
+# Pleas find the original script here: https://github.com/JohnTroony/LUKS-OPs/blob/master/luks-ops.sh
+# All credits to John Troon.
 
 
 ################################################################################
+# Variables
+constant="luks_"
+cryptdev=$(cat < /dev/urandom | tr -dc "[:lower:]"  | head -c 8)
+logs=$(cat < /dev/urandom | tr -dc "[:lower:]"  | head -c 4)    
+temp_name="$constant$logs"
+now=$(date +"-%b-%d-%y-%H%M%S")
+
 # colors for errors and warnings	
 red=$(tput setab 0; tput setaf 1)
 yellow=$(tput setab 0; tput setaf 3)
@@ -20,77 +29,13 @@ normal="\033[0m"
 
 
 ################################################################################
-# Defaults
-
-CIPHER="aes-xts-plain64"
-KEYSIZE="256"
-DEVICE="/dev/vdb"
-ADDRESS="galaxy_data"
-MOUNTPOINT="/export"
+# FUNCTIONS
 
 
-################################################################################
-# Parse CLI options
-
-while [ $# -gt 0 ]
-do
-
-  case $1 in
-    -c|--cipher) CIPHER="$2"; shift;;
-    
-    -k|--keysize) KEYSIZE="$2"; shift;;
-
-    -d|--device) DEVICE="$2"; shift ;;
-
-    -a|--address) ADDRESS="$2"; shift ;;
-
-    -m|--mountpoint) MOUNTPOINT="$2"; shift ;;
-
-    -p|--passphrase) PASSPHRASE="$2"; shift ;;
-
-    -i|--interactive) INTERACTIVE=YES;;
-
-    --default) DEFAULT=YES;;
-
-    -h|--help) HELP=YES;;
-
-    -*) echo >&2 "usage: $0 [--help] [print all options]"
-	exit 1;;
-    *) echo >&2 "Loading defaults"; DEFAULT=YES;;	# terminate while loop
-  esac
-  shift
-done
-
-echo CIPHER  = "${CIPHER}"
-echo DEVICE PATH  = "${DEVICE}"
-echo MAPPER PATH  = "${ADDRESS}"
-echo MOUNTPOINT  = "${MOUNTPOINT}"
-echo DEFAULT = "${DEFAULT}"
-
-if [[ -n $1 ]]; then
-    echo "Last line of file specified as non-opt/last argument:"
-    tail -1 $1
-fi
-
-#---
-# Print Help
-
-if [ "${HELP}" = "YES" ]
-  then
-    echo -e "$green Print help... $normal"
-fi
-
-#---
-# Default Options
-
-if [ "${DEFAULT}" = "YES" ]
-  then
-    echo -e "$blue Setting to default... $normal"
-fi
-
-################################################################################
+#____________________________________
 # Lock/UnLock Section
 # http://wiki.bash-hackers.org/howto/mutex
+# "trap -l" for signal summary
 
 LOCKDIR=/tmp/fast_cryptsetup #TODO /var/lock/fast_cryptsetup.lock
 PIDFILE=${LOCKDIR}/fast_cryptsetup.pid
@@ -112,7 +57,6 @@ function lock(){
     if mkdir "${LOCKDIR}" &>/dev/null; then
       # lock succeeded, I'm storing the PID 
       echo "$$" >"${PIDFILE}"
-      #sleep 15 # Enable it only for testing
       echo "success, installed signal handlers"
 
     else
@@ -139,12 +83,13 @@ function lock(){
         echo "Lock failed, PID ${OTHERPID} is active" >&2
         echo "Another fast_cryptsetup process is active" >&2
         echo "If you're sure fast_cryptsetup is not already running,"
-        echo "you can remove $LOCKDIR" >&2
+        echo "you can remove $LOCKDIR and restart fast_cryptsetup" >&2
         exit ${ENO_LOCKFAIL}
       fi
     fi
 }
 
+#____________________________________
 function unlock(){
   # lock succeeded, install signal handlers before storing the PID just in case 
   # storing the PID fails
@@ -158,14 +103,25 @@ function unlock(){
         exit ${ENO_RECVSIG}' 1 2 3 15
 }
 
-################################################################################
+
+#___________________________________
+function info {
+  echo CIPHER  = "${CIPHER}"
+  echo KEYSIZE = "${KEYSIZE}"
+}
+
+#____________________________________
 # Check cryptsetup installation
 
 function check_cryptsetup {
 
   if [[ -r /etc/os-release ]]; then
       . /etc/os-release
-      echo $ID  | tee /dev/fd/3
+      eco "Lock failed, PID ${OTHERPID} is active" >&2
+        echo "Another fast_cryptsetup process is active" >&2
+        echo "If you're sure fast_cryptsetup is not already running,"
+        echo "you can remove $LOCKDIR" >&2
+o $ID  | tee /dev/fd/3
       if [ "$ID" = "ubuntu" ]; then
           echo "Distribution: Ubuntu. Using apt" | tee /dev/fd/3
           apt-get install -y cryptsetup  | tee /dev/fd/3
@@ -179,37 +135,125 @@ function check_cryptsetup {
 
 }
 
-################################################################################
+
+#____________________________________
 # Check volume 
 
 function check_volume {
   DEVICE=$(df -P $MOUNTPOINT | tail -1 | cut -d' ' -f 1)
+  echo "Device name: $DEVICE"
 }
 
-###
-#cryptsetup -y -v luksFormat /dev/vdb
-#
-#cryptsetup luksOpen /dev/vdb galaxy_data
-#
-#cryptsetup -v status galaxy_data
-#
-#cryptsetup luksDump /dev/vdb
-#
-#dd if=/dev/zero of=/dev/mapper/galaxy_data
-#
-#pv -tpreb /dev/zero | dd of=/dev/mapper/galaxy_data bs=128M
-#
-#mkfs.ext4 /dev/mapper/galaxy_data
-#
-#mount /dev/mapper/galaxy_data /export
 
-#df -H
+#____________________________________
+#FIXME cryptsetup (temporary version)
 
-check_volume
+function encrypt {
+
+  # Check which virtual volume is mounted to /export
+  check_volume | tee /dev/fd/3
+
+  #Create the LUKS virtual volume
+
+  #cryptsetup -y -v luksFormat $DEVICE
+
+  #cryptsetup luksOpen /dev/vdb galaxy_data
+
+  #cryptsetup -v status galaxy_data
+
+  #cryptsetup luksDump /dev/vdb
+
+  #dd if=/dev/zero of=/dev/mapper/galaxy_data
+
+  #pv -tpreb /dev/zero | dd of=/dev/mapper/galaxy_data bs=128M
+
+  #mkfs.ext4 /dev/mapper/galaxy_data
+
+  #mount /dev/mapper/galaxy_data /export
+
+  #df -H
+}
+
+
+
+################################################################################
+# Main script
+
+#LOGFILE="/tmp/luks$now.log"
+LOGFILE="/tmp/fast_cryptsetup.log"
+exec 3>&1 1>>${LOGFILE} 2>&1
+
+
+# Default values
+CIPHER="aes-xts-plain64"
+KEYSIZE="256"
+DEVICE="/dev/vdb"
+ADDRESS="galaxy_data"
+MOUNTPOINT="/export"
+FILESYSTEM="ext4"
+
+# If running script with no arguments then loads defaults values.
+if [ $# -lt 1 ]; then
+  echo "No inputs. Using defaults values:" | tee /dev/fd/3
+  info | tee /dev/fd/3
+fi
+
+
+# Parse CLI options
+
+while [ $# -gt 0 ]
+do
+
+  case $1 in
+    -c|--cipher) CIPHER="$2"; shift;;
+    
+    -k|--keysize) KEYSIZE="$2"; shift;;
+
+    -d|--device) DEVICE="$2"; shift ;;
+
+    -a|--address) ADDRESS="$2"; shift ;;
+
+    -m|--mountpoint) MOUNTPOINT="$2"; shift ;;
+
+    -p|--passphrase) PASSPHRASE="$2"; shift ;;
+
+    -f|--filesystem) FILESYSTEM="$2"; shift ;;
+
+    -i|--interactive) INTERACTIVE=YES;; #TODO implement interactive mode
+
+    --default) DEFAULT=YES;;
+
+    -h|--help) HELP=YES;;
+
+    -*) echo >&2 "usage: $0 [--help] [print all options]"
+	exit 1;;
+    *) echo >&2 "Loading defaults"; DEFAULT=YES;;	# terminate while loop
+  esac
+  shift
+  info
+done
+
+
+if [[ -n $1 ]]; then
+    echo "Last line of file specified as non-opt/last argument:"
+    tail -1 $1
+fi
+
+#---
+# Print Help
+
+if [ "${HELP}" = "YES" ]
+  then
+    echo -e "$green Print help... $normal"
+fi
+
 
 lock
 
-echo "sto in mezzo"
+#sleep 15 # Enable it only for testing
+echo "System locked, waiting for unlock..."
+
+encrypt
 
 unlock
 #check_cryptsetup

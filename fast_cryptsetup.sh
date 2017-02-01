@@ -193,15 +193,19 @@ function setup_device(){
   echo -e "\n==================================="
   echo "Using the selected $cipher_algorithm algorithm to luksformat the volume"
   #---
-  # Logs
+  # log
   echo -e "\nStart cryptsetup" >> "$LOGFILE" 2>&1
   info >> "$LOGFILE" 2>&1
-  echo -e "cryptsetup full command:"  >> "$LOGFILE" 2>&1 
+  echo -e "cryptsetup full command:" >> "$LOGFILE" 2>&1 
   echo -e "cryptsetup -v --cipher $cipher_algorithm --key-size $keysize --hash $hash_algorithm --iter-time 2000 --use-urandom --verify-passphrase luksFormat $device" >> "$LOGFILE" 2>&1 
-  # end logs
+  # end log
   cryptsetup -v --cipher $cipher_algorithm --key-size $keysize --hash $hash_algorithm --iter-time 2000 --use-urandom --verify-passphrase luksFormat $device
-  code=$?
-  if [ $code != 0 ]; then
+  ecode=$?
+  if [ $ecode != 0 ]; then
+    # log
+    echo -e "Error: Command cryptsetup failed!" >> "$LOGFILE" 2>&1 #TODO redirect log
+    # end log
+    unlock
     exit 1
   fi
 }
@@ -215,10 +219,10 @@ function open_device(){
     cryptsetup luksOpen $device $cryptdev
   else
     echo -e "$red Crypt device already exists! Please check logs: $LOGFILE $none"
-    # logs
+    # log
     echo -e "\nError: Unable to luksOpen device. " >> "$LOGFILE" 2>&1
     echo -e "Error: /dev/mapper/${cryptdev} already exists." >> "$LOGFILE" 2>&1
-    # end logs
+    # end log
     unlock # unlocking script instance
     exit 1
   fi

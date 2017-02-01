@@ -112,30 +112,36 @@ function info {
 }
 
 #____________________________________
-# Check cryptsetup installation
+# Install cryptsetup
 
-function check_cryptsetup {
+function install_cryptsetup {
 
   if [[ -r /etc/os-release ]]; then
       . /etc/os-release
-      eco "Lock failed, PID ${OTHERPID} is active" >&2
-        echo "Another fast_cryptsetup process is active" >&2
-        echo "If you're sure fast_cryptsetup is not already running,"
-        echo "you can remove $LOCKDIR" >&2
-o $ID  | tee /dev/fd/3
+      echo $ID
       if [ "$ID" = "ubuntu" ]; then
-          echo "Distribution: Ubuntu. Using apt" | tee /dev/fd/3
-          apt-get install -y cryptsetup  | tee /dev/fd/3
+          echo "Distribution: Ubuntu. Using apt"
+          apt-get install -y cryptsetup
       else
-          echo "Distribution: CentOS. Using yum"  | tee /dev/fd/3
-          yum install -y cryptsetup-luks pv | tee /dev/fd/3
+          echo "Distribution: CentOS. Using yum"
+          yum install -y cryptsetup-luks pv
       fi
   else
-      echo "Not running a distribution with /etc/os-release available" | tee /dev/fd/3
+      echo "Not running a distribution with /etc/os-release available"
   fi
 
 }
 
+#____________________________________
+# Check cryptsetup installation
+
+function check_cryptsetup {
+
+  echo "Check if the required applications are installed..."
+  type -P dmsetup &>/dev/null || echo -e "$red dmestup is not installed. Installing... $noine" #TODO add install device_mapper
+  type -P cryptsetup &>/dev/null || { echo -e "$red cryptsetup is not installed. Installing... $none"; install_cryptsetup  >> "$LOGFILE" 2>&1; echo -e "$green cryptsetup installed! $none"; }
+
+}
 
 #____________________________________
 # Check volume 
@@ -152,7 +158,7 @@ function check_volume {
 function encrypt {
 
   # Check which virtual volume is mounted to /export
-  check_volume | tee /dev/fd/3
+  check_volume >> "$LOGFILE" 2>&1
 
   #Create the LUKS virtual volume
 
@@ -182,7 +188,6 @@ function encrypt {
 
 #LOGFILE="/tmp/luks$now.log"
 LOGFILE="/tmp/fast_cryptsetup.log"
-exec 3>&1 1>>${LOGFILE} 2>&1
 
 
 # Default values
@@ -195,8 +200,8 @@ FILESYSTEM="ext4"
 
 # If running script with no arguments then loads defaults values.
 if [ $# -lt 1 ]; then
-  echo "No inputs. Using defaults values:" | tee /dev/fd/3
-  info | tee /dev/fd/3
+  echo "No inputs. Using defaults values:" >> "$LOGFILE" 2>&1
+  info >> "$LOGFILE" 2>&1
 fi
 
 
@@ -228,10 +233,11 @@ do
 
     -*) echo >&2 "usage: $0 [--help] [print all options]"
 	exit 1;;
-    *) echo >&2 "Loading defaults"; DEFAULT=YES;;	# terminate while loop
+    *) echo >&2 "Loading defaults"; DEFAULT=YES;; # terminate while loop
   esac
   shift
-  info
+  echo "Custom options:" >> "$LOGFILE" 2>&1
+  info >> "$LOGFILE" 2>&1
 done
 
 
@@ -253,10 +259,14 @@ fi
 
 lock
 
+# Check if the required applications are installed
+check_cryptsetup
+
 #---
-# Sleep 15 # Enable it only for testing
+# Enable it only for testing
 
 echo "System locked, waiting..."
+##Sleep 15
 
 #---
 # Encrypt volume

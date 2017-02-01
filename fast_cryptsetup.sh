@@ -165,6 +165,26 @@ function umount_vol {
 
 
 #____________________________________
+function setup_device {
+  echo "==================================="
+  echo "Using the selected $cipher_algorithm algorithm to luksformat the volume"
+  cryptsetup -v --cipher $cipher_algorithm --key-size $keysize --hash $hash_algorithm --iter-time 2000 --use-urandom --verify-passphrase luksFormat $device
+}
+
+#____________________________________
+function open_device {
+  echo "==================================="
+  echo "Open LUKS volume"
+  if [ ! -b /dev/mapper/${cryptdev} ]; then
+    cryptsetup luksOpen $device $cryptdev
+  else
+    echo -e "$red Crypt device already exists! Exiting! $none"
+    exit 1
+  fi
+}
+
+
+#____________________________________
 # Create block file
 # https://wiki.archlinux.org/index.php/Dm-crypt/Device_encryption
 # https://wiki.archlinux.org/index.php/Dm-crypt/Drive_preparation
@@ -174,13 +194,11 @@ function umount_vol {
 # To prevent cryptographic attacks or unwanted file recovery, this data is ideally indistinguishable from data later written by dm-crypt.
 
 function wipe_data {
-  
   echo "Creating File Block. This might take time depending on the size & your machine!"
 
   #dd if=/dev/zero of=/dev/mapper/${cryptdev} bs=1M  status=progress >> "$LOGFILE" 2>&1
   pv -tpreb /dev/zero | dd of=/dev/mapper/${cryptdev} bs=1M status=progress >> "$LOGFILE" 2>&1
-  echo -e "$green \nDone creating the block file $name in $ directory. \n $normal"
-
+  echo -e "$green \nBlock file /dev/mapper/${cryptdev} created. \n $normal"
 }
 
 
@@ -196,19 +214,15 @@ function encrypt {
   umount_vol >> "$LOGFILE" 2>&1
 
   # Setup a new dm-crypt device
-  echo "==================================="
-  echo " Use the selected $cipher_algorithm algorithm to luksformat the volume"
-  cryptsetup -v --cipher $cipher_algorithm --key-size $keysize --hash $hash_algorithm --iter-time 2000 --use-urandom --verify-passphrase luksFormat $device
+  setup_device
 
   # Create mapping
-  echo "==================================="
-  echo "Open LUKS volume"
-  cryptsetup luksOpen $device $cryptdev
+  open_device
 
   # Check status
   echo "check $cryptdev status with cryptseutp status" >> "$LOGFILE" 2>&1
   cryptsetup -v status $cryptdev >> "$LOGFILE" 2>&1
-
+  
   # Wipe data for security
   echo "==================================="
   echo "Wiping disk data by overwriting the entire drive with random data"
@@ -219,9 +233,12 @@ function encrypt {
   echo "Creating filesystem..."
   mkfs.${filesystem} /dev/mapper/${cryptdev}
 
+  # Mount volume
+  echo "==================================="
+  echo "Mounting encrypted device..."
   mount /dev/mapper/${cryptdev} $mountpoint
 
-  df -H
+  df -Hv >> "$LOGFILE" 2>&1
 }
 
 

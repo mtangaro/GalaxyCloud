@@ -203,7 +203,8 @@ function setup_device(){
   ecode=$?
   if [ $ecode != 0 ]; then
     # log
-    echo -e "Error: Command cryptsetup failed!" >> "$LOGFILE" 2>&1 #TODO redirect log
+    echo -e "Error: Command cryptsetup failed! Mounting $device to $mountpoint again." >> "$LOGFILE" 2>&1 #TODO redirect exit code
+    mount $device $mountpoint >> "$LOGFILE" 2>&1
     # end log
     unlock
     exit 1
@@ -222,6 +223,8 @@ function open_device(){
     # log
     echo -e "\nError: Unable to luksOpen device. " >> "$LOGFILE" 2>&1
     echo -e "Error: /dev/mapper/${cryptdev} already exists." >> "$LOGFILE" 2>&1
+    echo -e " Mounting $device to $mountpoint again." >> "$LOGFILE" 2>&1
+    mount $device $mountpoint >> "$LOGFILE" 2>&1
     # end log
     unlock # unlocking script instance
     exit 1
@@ -247,14 +250,48 @@ function encryption_status(){
 # To prevent cryptographic attacks or unwanted file recovery, this data is ideally indistinguishable from data later written by dm-crypt.
 
 function wipe_data(){
-  echo "==================================="
+  echo -e "\n==================================="
   echo "Wiping disk data by overwriting the entire drive with random data"
-  echo "Creating File Block. This might take time depending on the size & your machine!"
+  echo "This might take time depending on the size & your machine!"
 
   #dd if=/dev/zero of=/dev/mapper/${cryptdev} bs=1M  status=progress >> "$LOGFILE" 2>&1
   pv -tpreb /dev/zero | dd of=/dev/mapper/${cryptdev} bs=1M status=progress >> "$LOGFILE" 2>&1
-  echo -e "$green \nBlock file /dev/mapper/${cryptdev} created. \n $normal"
-  echo "Wiping done."
+  echo -e "\nBlock file /dev/mapper/${cryptdev} created." >> "${LOGFILE}" 2>&1
+  echo -e "Wiping done."
+}
+
+
+#____________________________________
+function create_fs(){
+  echo -e "\n==================================="
+  echo -e "Creating filesystem..."
+  mkfs.${filesystem} /dev/mapper/${cryptdev} >> "${LOGFILE}" 2>&1
+  if [ $? != 0 ]; then
+    echo -e "$red Error: while creating ${filesystem} filesystem. Please check logs: $LOGFILE $none"
+    # log
+    echo -e "Error: Command mkfs failed!" >> "$LOGFILE" 2>&1 #TODO redirect log
+    # end log
+    unlock
+    exit 1
+  fi
+
+}
+
+
+#____________________________________
+function mount_vol(){
+
+  echo -e "\n==================================="
+  echo -e "Mounting encrypted device..."
+  mount /dev/mapper/${cryptdev} $mountpoint
+  df -Hv >> "$LOGFILE" 2>&1
+
+}
+
+
+#____________________________________
+function end(){
+  echo -e "$green Successful. Please exit by the VM/Docker. Galaxy will be automatically installed! $none"
 }
 
 
@@ -279,21 +316,14 @@ function encrypt(){
   encryption_status >> "$LOGFILE" 2>&1
   
   # Wipe data for security
-  echo "==================================="
-  echo "Wiping disk data by overwriting the entire drive with random data"
   wipe_data
 
   # Create filesystem
-  echo "==================================="
-  echo "Creating filesystem..."
-  mkfs.${filesystem} /dev/mapper/${cryptdev}
+  create_fs
 
   # Mount volume
-  echo "==================================="
-  echo "Mounting encrypted device..."
-  mount /dev/mapper/${cryptdev} $mountpoint
+  mount_vol
 
-  df -Hv >> "$LOGFILE" 2>&1
 }
 
 
@@ -388,6 +418,10 @@ check_cryptsetup
 #---
 # Encrypt volume
 encrypt
+
+#---
+# Done!
+end
 
 #---
 # Unlock once done.

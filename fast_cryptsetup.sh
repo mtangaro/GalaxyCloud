@@ -33,6 +33,15 @@ normal="\033[0m"
 # FUNCTIONS
 
 
+
+#____________________________________
+# Print out intro banner
+function intro(){
+  echo -e "$yellow =========================================================$none"
+  echo -e "$green \tELIXIR-IIB encryption script - Alpha Version $normal"
+  echo -e "$yellow =========================================================$none"
+}
+
 #____________________________________
 # Lock/UnLock Section
 # http://wiki.bash-hackers.org/howto/mutex
@@ -52,13 +61,13 @@ function lock(){
 
   # start un/locking attempt
   trap 'ECODE=$?; echo "[statsgen] Exit: ${ETXT[ECODE]}($ECODE)" >&2' 0
-  echo -n "[statsgen] Locking: " >&2
+  echo -n "[$STAT]: " >&2
 
 
     if mkdir "${LOCKDIR}" &>/dev/null; then
       # lock succeeded, I'm storing the PID 
       echo "$$" >"${PIDFILE}"
-      echo "success, installed signal handlers"
+      echo -e "LUKS script for ELIXIR-IIB use case in INDIGO. Starting log file: $now"
 
     else
 
@@ -69,15 +78,15 @@ function lock(){
       #  Thanks to Grzegorz Wierzowiecki for pointing out this race condition on
       #  http://wiki.grzegorz.wierzowiecki.pl/code:mutex-in-bash
       if [ $? != 0 ]; then
-        echo "lock failed, PID ${OTHERPID} is active" >&2
+        echo "Another script instance is active: PID ${OTHERPID} " >&2
         exit ${ENO_LOCKFAIL}
       fi
 
       if ! kill -0 $OTHERPID &>/dev/null; then
         # lock is stale, remove it and restart
-        echo "removing stale lock of nonexistant PID ${OTHERPID}" >&2
+        echo "removing fake lock file of nonexistant PID ${OTHERPID}" >&2
         rm -rf "${LOCKDIR}"
-        echo "[statsgen] restarting myself" >&2
+        echo "[statsgen] restarting script..." >&2
         exec "$0" "$@"
       else
         # lock is valid and OTHERPID is active - exit, we're locked!
@@ -95,26 +104,26 @@ function unlock(){
   # lock succeeded, install signal handlers before storing the PID just in case 
   # storing the PID fails
   trap 'ECODE=$?;
-        echo "[statsgen] Removing lock. Exit: ${ETXT[ECODE]}($ECODE)" >&2
+        echo "[$STAT] Removing lock. Exit: ${ETXT[ECODE]}($ECODE)"  >> "$LOGFILE" 2>&1 
         rm -rf "${LOCKDIR}"' 0
 
   # the following handler will exit the script upon receiving these signals
   # the trap on "0" (EXIT) from above will be triggered by this trap's "exit" command!
-  trap 'echo "[statsgen] Killed by a signal." >&2
+  trap 'echo "[$STAT] Killed by a signal."  >> "$LOGFILE" 2>&1 
         exit ${ENO_RECVSIG}' 1 2 3 15
 }
 
 
 #___________________________________
-function info {
-  echo CIPHER  = "${CIPHER}"
-  echo KEYSIZE = "${KEYSIZE}"
+function info(){
+  echo CIPHER  = "${cipher_algorithm}"
+  echo KEYSIZE = "${keysize}"
 }
 
 #____________________________________
 # Install cryptsetup
 
-function install_cryptsetup {
+function install_cryptsetup(){
 
   if [[ -r /etc/os-release ]]; then
       . /etc/os-release
@@ -135,9 +144,9 @@ function install_cryptsetup {
 #____________________________________
 # Check cryptsetup installation
 
-function check_cryptsetup {
-
-  echo "Check if the required applications are installed..."
+function check_cryptsetup(){
+  echo -e "\n==================================="
+  echo -e "Check if the required applications are installed..."
   type -P dmsetup &>/dev/null || echo -e "$red dmestup is not installed. Installing... $noine" #TODO add install device_mapper
   type -P cryptsetup &>/dev/null || { echo -e "$red cryptsetup is not installed. Installing... $none"; install_cryptsetup  >> "$LOGFILE" 2>&1; echo -e "$green cryptsetup installed! $none"; }
 
@@ -146,17 +155,31 @@ function check_cryptsetup {
 #____________________________________
 # Check volume 
 
-function check_vol {
-  echo "==================================="
-  echo "Check volume..."
-  device=$(df -P $mountpoint | tail -1 | cut -d' ' -f 1)
-  echo "Device name: $device"
+function check_vol(){
+  echo -e "\n==================================" >> "$LOGFILE" 2>&1
+  echo -e "Check volume..." >> "$LOGFILE" 2>&1
+
+  if [ $(mount | grep -c $mountpoint) != 1 ]; then
+      echo -e "$red Device not mounted, exiting! $none"
+      echo "Please check logs: $LOGFILE"
+      #---
+      # Log details
+      echo "Error: no device  mounted to $mountpoint:" >> "$LOGFILE" 2>&1
+      df -h >> "$LOGFILE" 2>&1
+      # end log
+      unlock # unlocking script instance
+      exit 1
+  else
+    device=$(df -P $mountpoint | tail -1 | cut -d' ' -f 1)
+    echo "Device name: $device" >> "$LOGFILE" 2>&1
+  fi
 }
+
 
 #____________________________________
 # Umount volume
 
-function umount_vol {
+function umount_vol(){
   echo "==================================="
   echo "Umounting device..."
   umount $mountpoint
@@ -165,22 +188,31 @@ function umount_vol {
 
 
 #____________________________________
-function setup_device {
+function setup_device(){
   echo "==================================="
   echo "Using the selected $cipher_algorithm algorithm to luksformat the volume"
   cryptsetup -v --cipher $cipher_algorithm --key-size $keysize --hash $hash_algorithm --iter-time 2000 --use-urandom --verify-passphrase luksFormat $device
 }
 
+
 #____________________________________
-function open_device {
-  echo "==================================="
-  echo "Open LUKS volume"
+function open_device(){
+  echo -e "\n==================================="
+  echo -e "Open LUKS volume"
   if [ ! -b /dev/mapper/${cryptdev} ]; then
     cryptsetup luksOpen $device $cryptdev
   else
     echo -e "$red Crypt device already exists! Exiting! $none"
-    exit 1
+    unlock # unlocking script instance
   fi
+}
+
+
+#____________________________________
+function encryption_status(){
+  echo "==================================="
+  echo "check $cryptdev status with cryptseutp status"
+  cryptsetup -v status $cryptdev
 }
 
 
@@ -193,25 +225,28 @@ function open_device {
 # Before encrypting a drive, it is recommended to perform a secure erase of the disk by overwriting the entire drive with random data.
 # To prevent cryptographic attacks or unwanted file recovery, this data is ideally indistinguishable from data later written by dm-crypt.
 
-function wipe_data {
+function wipe_data(){
+  echo "==================================="
+  echo "Wiping disk data by overwriting the entire drive with random data"
   echo "Creating File Block. This might take time depending on the size & your machine!"
 
   #dd if=/dev/zero of=/dev/mapper/${cryptdev} bs=1M  status=progress >> "$LOGFILE" 2>&1
   pv -tpreb /dev/zero | dd of=/dev/mapper/${cryptdev} bs=1M status=progress >> "$LOGFILE" 2>&1
   echo -e "$green \nBlock file /dev/mapper/${cryptdev} created. \n $normal"
+  echo "Wiping done."
 }
 
 
 #____________________________________
 #FIXME cryptsetup (temporary version)
 
-function encrypt {
+function encrypt(){
 
   # Check which virtual volume is mounted to /export
-  check_vol >> "$LOGFILE" 2>&1
+  check_vol
 
   # Umount volume.
-  umount_vol >> "$LOGFILE" 2>&1
+  umount_vol  >> "$LOGFILE" 2>&1
 
   # Setup a new dm-crypt device
   setup_device
@@ -220,8 +255,7 @@ function encrypt {
   open_device
 
   # Check status
-  echo "check $cryptdev status with cryptseutp status" >> "$LOGFILE" 2>&1
-  cryptsetup -v status $cryptdev >> "$LOGFILE" 2>&1
+  encryption_status >> "$LOGFILE" 2>&1
   
   # Wipe data for security
   echo "==================================="
@@ -246,7 +280,8 @@ function encrypt {
 ################################################################################
 # Main script
 
-#LOGFILE="/tmp/luks$now.log"
+STAT="script_name"
+#LOGFILE="/tmp/luks$inow.log"
 LOGFILE="/tmp/fast_cryptsetup.log"
 
 
@@ -259,9 +294,17 @@ cryptdev="crypt"
 mountpoint="/export"
 filesystem="ext4"
 
+#---
+# Create lock file. Ensure only single instance running.
+lock >> "$LOGFILE" 2>&1
+
+#---
+# Print intro
+intro
+
 # If running script with no arguments then loads defaults values.
 if [ $# -lt 1 ]; then
-  echo "No inputs. Using defaults values:" >> "$LOGFILE" 2>&1
+  echo -e "\nNo inputs. Using defaults values:" >> "$LOGFILE" 2>&1
   info >> "$LOGFILE" 2>&1
 fi
 
@@ -318,25 +361,13 @@ if [ "${HELP}" = "YES" ]
 fi
 
 #---
-# Create lock file. Ensure only single instance running.
-
-lock
-
 # Check if the required applications are installed
 check_cryptsetup
 
 #---
-# Enable it only for testing
-
-echo "System locked, waiting..."
-##Sleep 15
-
-#---
 # Encrypt volume
-
 encrypt
 
 #---
 # Unlock once done.
-
-unlock
+unlock >> "$LOGFILE" 2>&1

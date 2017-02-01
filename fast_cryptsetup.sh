@@ -116,8 +116,9 @@ function unlock(){
 
 #___________________________________
 function info(){
-  echo CIPHER  = "${cipher_algorithm}"
-  echo KEYSIZE = "${keysize}"
+  echo cipher algorithm  = "${cipher_algorithm}"
+  echo hash algorithm = "${hash_algorithm}"
+  echo key size = "${keysize}"
 }
 
 #____________________________________
@@ -163,10 +164,10 @@ function check_vol(){
       echo -e "$red Device not mounted, exiting! $none"
       echo "Please check logs: $LOGFILE"
       #---
-      # Log details
+      # Logs
       echo "Error: no device  mounted to $mountpoint:" >> "$LOGFILE" 2>&1
       df -h >> "$LOGFILE" 2>&1
-      # end log
+      # end logs
       unlock # unlocking script instance
       exit 1
   else
@@ -180,7 +181,7 @@ function check_vol(){
 # Umount volume
 
 function umount_vol(){
-  echo "==================================="
+  echo -e  "\n==================================="
   echo "Umounting device..."
   umount $mountpoint
   echo "$device umounted, ready for encryption!"
@@ -189,9 +190,20 @@ function umount_vol(){
 
 #____________________________________
 function setup_device(){
-  echo "==================================="
+  echo -e "\n==================================="
   echo "Using the selected $cipher_algorithm algorithm to luksformat the volume"
+  #---
+  # Logs
+  echo -e "\nStart cryptsetup" >> "$LOGFILE" 2>&1
+  info >> "$LOGFILE" 2>&1
+  echo -e "cryptsetup full command:"  >> "$LOGFILE" 2>&1 
+  echo -e "cryptsetup -v --cipher $cipher_algorithm --key-size $keysize --hash $hash_algorithm --iter-time 2000 --use-urandom --verify-passphrase luksFormat $device" >> "$LOGFILE" 2>&1 
+  # end logs
   cryptsetup -v --cipher $cipher_algorithm --key-size $keysize --hash $hash_algorithm --iter-time 2000 --use-urandom --verify-passphrase luksFormat $device
+  code=$?
+  if [ $code != 0 ]; then
+    exit 1
+  fi
 }
 
 
@@ -202,8 +214,13 @@ function open_device(){
   if [ ! -b /dev/mapper/${cryptdev} ]; then
     cryptsetup luksOpen $device $cryptdev
   else
-    echo -e "$red Crypt device already exists! Exiting! $none"
+    echo -e "$red Crypt device already exists! Please check logs: $LOGFILE $none"
+    # logs
+    echo -e "\nError: Unable to luksOpen device. " >> "$LOGFILE" 2>&1
+    echo -e "Error: /dev/mapper/${cryptdev} already exists." >> "$LOGFILE" 2>&1
+    # end logs
     unlock # unlocking script instance
+    exit 1
   fi
 }
 

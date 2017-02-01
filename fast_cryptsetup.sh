@@ -146,11 +146,22 @@ function check_cryptsetup {
 #____________________________________
 # Check volume 
 
-function check_volume {
+function check_vol {
+  echo "==================================="
+  echo "Check volume..."
   DEVICE=$(df -P $MOUNTPOINT | tail -1 | cut -d' ' -f 1)
   echo "Device name: $DEVICE"
 }
 
+#____________________________________
+# Umount volume
+
+function umount_vol {
+  echo "==================================="
+  echo "Umounting device..."
+  umount $MOUNTPOINT
+  echo "$DEVICE umounted, ready for encryption!"
+}
 
 #____________________________________
 #FIXME cryptsetup (temporary version)
@@ -158,7 +169,10 @@ function check_volume {
 function encrypt {
 
   # Check which virtual volume is mounted to /export
-  check_volume >> "$LOGFILE" 2>&1
+  check_vol >> "$LOGFILE" 2>&1
+
+  # Umount volume.
+  umount_vol >> "$LOGFILE" 2>&1
 
   #Create the LUKS virtual volume
 
@@ -194,7 +208,7 @@ LOGFILE="/tmp/fast_cryptsetup.log"
 CIPHER="aes-xts-plain64"
 KEYSIZE="256"
 DEVICE="/dev/vdb"
-ADDRESS="galaxy_data"
+ADDRESS="crypt"
 MOUNTPOINT="/export"
 FILESYSTEM="ext4"
 

@@ -149,7 +149,7 @@ function check_cryptsetup {
 function check_vol {
   echo "==================================="
   echo "Check volume..."
-  DEVICE=$(df -P $mountpoint | tail -1 | cut -d' ' -f 1)
+  device=$(df -P $mountpoint | tail -1 | cut -d' ' -f 1)
   echo "Device name: $device"
 }
 
@@ -177,7 +177,8 @@ function wipe_data {
   
   echo "Creating File Block. This might take time depending on the size & your machine!"
 
-  dd if=/dev/zero of=/dev/mapper/cryptdev bs=1M  status=progress >> "$LOGFILE" 2>&1
+  #dd if=/dev/zero of=/dev/mapper/${cryptdev} bs=1M  status=progress >> "$LOGFILE" 2>&1
+  pv -tpreb /dev/zero | dd of=/dev/mapper/${cryptdev} bs=1M status=progress >> "$LOGFILE" 2>&1
   echo -e "$green \nDone creating the block file $name in $ directory. \n $normal"
 
 }
@@ -195,18 +196,28 @@ function encrypt {
   umount_vol >> "$LOGFILE" 2>&1
 
   # Setup a new dm-crypt device
+  echo "==================================="
+  echo " Use the selected $cipher_algorithm algorithm to luksformat the volume"
   cryptsetup -v --cipher $cipher_algorithm --key-size $keysize --hash $hash_algorithm --iter-time 2000 --use-urandom --verify-passphrase luksFormat $device
 
   # Create mapping
+  echo "==================================="
+  echo "Open LUKS volume"
   cryptsetup luksOpen $device $cryptdev
 
   # Check status
-  cryptsetup -v status $cryptdev
+  echo "check $cryptdev status with cryptseutp status" >> "$LOGFILE" 2>&1
+  cryptsetup -v status $cryptdev >> "$LOGFILE" 2>&1
 
   # Wipe data for security
+  echo "==================================="
+  echo "Wiping disk data by overwriting the entire drive with random data"
   wipe_data
 
-  mkfs.ext4 /dev/mapper/${cryptdev}
+  # Create filesystem
+  echo "==================================="
+  echo "Creating filesystem..."
+  mkfs.${filesystem} /dev/mapper/${cryptdev}
 
   mount /dev/mapper/${cryptdev} $mountpoint
 

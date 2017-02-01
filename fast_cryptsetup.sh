@@ -149,8 +149,8 @@ function check_cryptsetup {
 function check_vol {
   echo "==================================="
   echo "Check volume..."
-  DEVICE=$(df -P $MOUNTPOINT | tail -1 | cut -d' ' -f 1)
-  echo "Device name: $DEVICE"
+  DEVICE=$(df -P $mountpoint | tail -1 | cut -d' ' -f 1)
+  echo "Device name: $device"
 }
 
 #____________________________________
@@ -159,9 +159,29 @@ function check_vol {
 function umount_vol {
   echo "==================================="
   echo "Umounting device..."
-  umount $MOUNTPOINT
-  echo "$DEVICE umounted, ready for encryption!"
+  umount $mountpoint
+  echo "$device umounted, ready for encryption!"
 }
+
+
+#____________________________________
+# Create block file
+# https://wiki.archlinux.org/index.php/Dm-crypt/Device_encryption
+# https://wiki.archlinux.org/index.php/Dm-crypt/Drive_preparation
+# https://wiki.archlinux.org/index.php/Disk_encryption#Preparing_the_disk
+#
+# Before encrypting a drive, it is recommended to perform a secure erase of the disk by overwriting the entire drive with random data.
+# To prevent cryptographic attacks or unwanted file recovery, this data is ideally indistinguishable from data later written by dm-crypt.
+
+function create_file_block {
+  
+  echo "Creating File Block. This might take time depending on the size & your machine!"
+
+  dd if=/dev/zero of=/dev/mapper/cryptdev bs=1M  status=progress >> "$LOGFILE" 2>&1
+  echo -e "$green \nDone creating the block file $name in $ directory. \n $normal"
+
+}
+
 
 #____________________________________
 #FIXME cryptsetup (temporary version)
@@ -174,25 +194,23 @@ function encrypt {
   # Umount volume.
   umount_vol >> "$LOGFILE" 2>&1
 
-  #Create the LUKS virtual volume
+  # Setup a new dm-crypt device
+  cryptsetup -v --cipher $cipher_algorithm --key-size $keysize --hash $hash_algorithm --iter-time 2000 --use-urandom --verify-passphrase luksFormat $device
 
-  #cryptsetup -y -v luksFormat $DEVICE
+  # Create mapping
+  cryptsetup luksOpen $device $cryptdev
 
-  #cryptsetup luksOpen /dev/vdb galaxy_data
+  # Check status
+  cryptsetup -v status $cryptdev
 
-  #cryptsetup -v status galaxy_data
+  # Create block file for security
+  create_block_file
 
-  #cryptsetup luksDump /dev/vdb
+  mkfs.ext4 /dev/mapper/${cryptdev}
 
-  #dd if=/dev/zero of=/dev/mapper/galaxy_data
+  mount /dev/mapper/${cryptdev} $mountpoint
 
-  #pv -tpreb /dev/zero | dd of=/dev/mapper/galaxy_data bs=128M
-
-  #mkfs.ext4 /dev/mapper/galaxy_data
-
-  #mount /dev/mapper/galaxy_data /export
-
-  #df -H
+  df -H
 }
 
 
@@ -205,12 +223,13 @@ LOGFILE="/tmp/fast_cryptsetup.log"
 
 
 # Default values
-CIPHER="aes-xts-plain64"
-KEYSIZE="256"
-DEVICE="/dev/vdb"
-ADDRESS="crypt"
-MOUNTPOINT="/export"
-FILESYSTEM="ext4"
+cipher_algorithm=aes-xts-plain64
+keysize=256
+hash_algorithm=sha256
+device="/dev/vdb"
+cryptdev="crypt"
+mountpoint="/export"
+filesystem="ext4"
 
 # If running script with no arguments then loads defaults values.
 if [ $# -lt 1 ]; then
@@ -225,19 +244,21 @@ while [ $# -gt 0 ]
 do
 
   case $1 in
-    -c|--cipher) CIPHER="$2"; shift;;
+    -c|--cipher) cipher_algorithm="$2"; shift;;
     
-    -k|--keysize) KEYSIZE="$2"; shift;;
+    -k|--keysize) keysize="$2"; shift;;
 
-    -d|--device) DEVICE="$2"; shift ;;
+    -a|--hash_algorithm) hash_algorithm="$2"; shift;;
 
-    -a|--address) ADDRESS="$2"; shift ;;
+    -d|--device) device="$2"; shift ;;
 
-    -m|--mountpoint) MOUNTPOINT="$2"; shift ;;
+    -e|--cryptdev) cryptdev="$2"; shift ;;
 
-    -p|--passphrase) PASSPHRASE="$2"; shift ;;
+    -m|--mountpoint) mountpoint="$2"; shift ;;
 
-    -f|--filesystem) FILESYSTEM="$2"; shift ;;
+    -p|--passphrase) passphrase="$2"; shift ;;  #TODO to be implemented passphrase option for web-UI
+
+    -f|--filesystem) filesystem="$2"; shift ;;
 
     -i|--interactive) INTERACTIVE=YES;; #TODO implement interactive mode
 

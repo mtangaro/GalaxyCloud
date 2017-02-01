@@ -248,13 +248,22 @@ if [ "${HELP}" = "YES" ]
     echo -e "$green Print help... $normal"
 fi
 
+#---
+# Create lock file. Ensure only single instance running.
 
 lock
 
-#sleep 15 # Enable it only for testing
-echo "System locked, waiting for unlock..."
+#---
+# Sleep 15 # Enable it only for testing
+
+echo "System locked, waiting..."
+
+#---
+# Encrypt volume
 
 encrypt
 
+#---
+# Unlock once done.
+
 unlock
-#check_cryptsetup

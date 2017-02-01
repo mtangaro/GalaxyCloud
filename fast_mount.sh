@@ -8,3 +8,5 @@ MOUNTPOINT=$3
 mkfs.ext4 $DEVICE
 mount $DEVICE  $MOUNTPOINT
 chown $USER:$GROUP $MOUNTPOINT
+
+df -h

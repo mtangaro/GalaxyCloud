@@ -173,7 +173,7 @@ function umount_vol {
 # Before encrypting a drive, it is recommended to perform a secure erase of the disk by overwriting the entire drive with random data.
 # To prevent cryptographic attacks or unwanted file recovery, this data is ideally indistinguishable from data later written by dm-crypt.
 
-function create_file_block {
+function wipe_data {
   
   echo "Creating File Block. This might take time depending on the size & your machine!"
 
@@ -203,8 +203,8 @@ function encrypt {
   # Check status
   cryptsetup -v status $cryptdev
 
-  # Create block file for security
-  create_block_file
+  # Wipe data for security
+  wipe_data
 
   mkfs.ext4 /dev/mapper/${cryptdev}
 

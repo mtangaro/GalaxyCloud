@@ -348,7 +348,6 @@ STAT="script_name"
 #LOGFILE="/tmp/luks$inow.log"
 LOGFILE="/tmp/fast_cryptsetup.log"
 
-
 # Default values
 cipher_algorithm=aes-xts-plain64
 keysize=256
@@ -357,6 +356,10 @@ device="/dev/vdb"
 cryptdev="crypt"
 mountpoint="/export"
 filesystem="ext4"
+
+# $mountpoint owner
+galaxy_user=galaxy
+galaxy_group=galaxy
 
 #---
 # Create lock file. Ensure only single instance running.

@@ -302,7 +302,7 @@ function set_permissions(){
 
 #____________________________________
 function end(){
-  echo -e "$green Successful. Please exit by the VM/Docker. Galaxy will be automatically installed! $none"
+  echo -e "\n$green Successful. Please exit by the VM/Docker. Galaxy will be automatically installed! $none"
 }
 
 

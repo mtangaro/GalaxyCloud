@@ -27,7 +27,7 @@ normal="\033[0m"
 
 
 ################################################################################
-# FUNCTIONS
+# GALAXY FUNCTIONS
 
 
 #____________________________________
@@ -150,3 +150,17 @@ if [ "$1" == "galaxy" ]; then
   if [ "$2" == "ps" ]; then __galaxy_ps; fi
   if [ "$2" == "load_env" ]; then __load_galaxy_env; fi
 fi
+
+
+################################################################################
+# STORAGE FUNCTIONS
+
+
+#____________________________________
+# check encrypted storage mounted
+
+function check_cryptdev(){
+
+  echo "TBU"
+
+}

@@ -29,6 +29,8 @@ normal="\033[0m"
 ################################################################################
 # GALAXY FUNCTIONS
 
+supervisord_conf_path=/etc
+supervisord_conf_file=${supervisord_conf_path}/supervisord.con
 
 #____________________________________
 # Load Galaxy environment
@@ -105,7 +107,7 @@ function __start_galaxy(){
     supervisorctl start galaxy:
   else
     echo -e "\nStarting supervisord, Galaxy will be automatically started."
-    /usr/bin/supervisord
+    /usr/bin/supervisord -c $supervisord_conf_file
   fi
 }
 

@@ -119,17 +119,17 @@ function unlock(){
 #___________________________________
 function info(){
   
-  echo "LUKS header information for $device"
-  echo "luks-${now}"
+  echo "#LUKS header information for $device"
+  echo "#luks-${now}"
   
-  echo "Cipher alghoritm: ${cipher_alghoritm}"
-  echo "Hash algorithm: ${hash_algorithm}"
-  echo "Key size: ${keysize}"
+  echo "CIPHER_ALGORITHM: ${cipher_alghoritm}"
+  echo "HASH_ALGORITHM: ${hash_algorithm}"
+  echo "KEYSIZE: ${keysize}"
 
-  echo "Device: ${device}"
-  echo "Mapper: /device/mapper/${crypdev}"
-  echo "Mountpoint: ${mountpoint}"
-  echo "Filesystem: ${filesystem}"
+  echo "DEVICE: ${device}"
+  echo "MAPPER: /device/mapper/${crypdev}"
+  echo "MOUNTPOINT: ${mountpoint}"
+  echo "FILESYSTEM: ${filesystem}"
 
 }
 

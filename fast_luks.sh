@@ -343,7 +343,7 @@ function encrypt(){
   # Mount volume
   mount_vol
 
-  # Save info file on /etc
+  # Print logs and luks information file on /etc
   save_info
 
 }

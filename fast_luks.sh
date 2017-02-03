@@ -11,7 +11,8 @@
 
 
 ################################################################################
-# Variables
+# VARIABLES
+
 constant="luks_"
 cryptdev=$(cat < /dev/urandom | tr -dc "[:lower:]"  | head -c 8)
 logs=$(cat < /dev/urandom | tr -dc "[:lower:]"  | head -c 4)    

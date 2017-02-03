@@ -34,19 +34,79 @@ normal="\033[0m"
 # Load Galaxy environment
 
 function __load_galaxy_env(){
-  echo -e "Loading Galaxy environment"
+  echo -e "\nLoading Galaxy environment"
   cd /home/galaxy/galaxy
   . /home/galaxy/galaxy/.venv/bin/activate
 }
 
 
 #____________________________________
+# Check if supervisord is running
+# Following the Unix convention of expecting utilities to return zero for success and non-zero for failure, so boolean conditions are inverted.
+
+function __check_supervisord(){
+  if ps ax | grep -v grep | grep supervisord > /dev/null
+  then
+    echo "Supervisord service running, everything is fine."
+    return 0
+  else
+    echo "supervisord is not running."
+    return 1
+  fi
+}
+
+
+#____________________________________
+# Check if Galaxy instance is up
+
+function __galaxy_url_status(){
+  if curl -s --head  --request GET http://90.147.102.96/galaxy | grep "200 OK" > /dev/null; then 
+    echo -e "$green""GALAXY IS UP AND RUNNING""$none"
+  else
+    echo -e "$red""GALAXY IS DOWN""$none"
+  fi
+
+}
+
+
+
+#____________________________________
+# Check if Galaxy instance is up
+
+function __galaxy_server_status(){
+  supervisorctl status galaxy:
+}
+
+
+#____________________________________
+
+function __galaxy_ps(){
+  ps -aux | grep "uwsgi"
+}
+
+
+#____________________________________
+# Check if Galaxy instance is up
+
+function __galaxy_status(){
+  echo -e "\nUrl status:"; __galaxy_url_status
+  echo -e "\nSupervisctl status:"; __galaxy_server_status
+  echo -e "\nuWSGI status:"; __galaxy_ps
+}
+
+
+#____________________________________
 # Define start function
 function __start_galaxy(){
-  _load_galaxy_env
+  __load_galaxy_env
 
-  echo -e "Start Galaxy"
-  supervisorctl start galaxy:
+  if __check_supervisord ; then
+    echo -e "\nStarting Galaxy"
+    supervisorctl start galaxy:
+  else
+    echo -e "\nStarting supervisord, Galaxy will be automatically started."
+    /usr/bin/supervisord
+  fi
 }
 
 
@@ -56,18 +116,18 @@ function __start_galaxy(){
 function __stop_galaxy(){
   __load_galaxy_env
 
-  echo -e "Stop galaxy from supervisord"
+  echo -e "\nStopping galaxy from supervisord"
   supervisorctl stop galaxy:
 
-  echo -e "uWSGI nodes check"
+  echo -e "\nuWSGI nodes check"
   if [ "$(pidof uwsgi)" ]
   then
   # process was found
-  echo -e "Killing uwsgi residual nodes"
+  echo -e "\nKilling uwsgi residual nodes"
   kill -9 $(pidof uwsgi)
   else
   # process not found
-  echo -e "uWSGI already gracefully stopped"
+  echo -e "\nuWSGI already gracefully stopped"
   fi
 }
 
@@ -76,12 +136,17 @@ function __stop_galaxy(){
 # Define restart function
 
 function __restart_galaxy(){
-  echo -e "Restarting the Galaxy production environment"
+  echo -e "\nRestarting the Galaxy production environment"
   __stop_galaxy
   __start_galaxy
 }
 
 
 if [ "$1" == "galaxy" ]; then
+  if [ "$2" == "start" ]; then __start_galaxy; fi
+  if [ "$2" == "stop" ]; then __stop_galaxy; fi
   if [ "$2" == "restart" ]; then __restart_galaxy; fi
+  if [ "$2" == "status" ]; then __galaxy_status; fi
+  if [ "$2" == "ps" ]; then __galaxy_ps; fi
+  if [ "$2" == "load_env" ]; then __load_galaxy_env; fi
 fi

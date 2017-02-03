@@ -290,17 +290,6 @@ function mount_vol(){
 
 
 #____________________________________
-# Give right permissions to $mountpoint directory after luksformatting.
-# Solve permission denied issue on Galaxy startup:
-# [Errno 13] Permission denied: '/export/galaxy'
-function set_permissions(){
-  echo -e "\n==================================="
-  echo -e "Changing $mountpoint permissions"
-  chown ${galaxy_user}:${galaxy_group} $mountpoint
-}
-
-
-#____________________________________
 function end(){
   echo -e "\n$green Successful. Please exit by the VM/Docker. Galaxy will be automatically installed! $none"
 }
@@ -335,8 +324,6 @@ function encrypt(){
   # Mount volume
   mount_vol
 
-  # Set permissions
-  set_permissions >> "$LOGFILE" 2>&1
 }
 
 
@@ -356,10 +343,6 @@ device="/dev/vdb"
 cryptdev="crypt"
 mountpoint="/export"
 filesystem="ext4"
-
-# $mountpoint owner
-galaxy_user=galaxy
-galaxy_group=galaxy
 
 #---
 # Create lock file. Ensure only single instance running.

@@ -166,3 +166,19 @@ function check_cryptdev(){
   echo "TBU"
 
 }
+
+function get_luksUUID(){
+
+  echo "TBU"
+  # cryptsetup luksUUID /dev/vdb 
+
+}
+
+#____________________________________
+
+function luksopen_cryptdev(){
+
+  echo "TBU"
+  # cryptsetup luksOpen /dev/disk/by-uuid/5e4918f7-43a0-4e99-8b6d-316ab90d7f0b cryptdev
+
+}

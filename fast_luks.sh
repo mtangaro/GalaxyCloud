@@ -8,7 +8,8 @@
 #
 # Please find the original script here: https://github.com/JohnTroony/LUKS-OPs/blob/master/luks-ops.sh
 # All credits to John Troon.
-
+#
+# The script is able to detect the $device only if it is mounted. This is by default for our-case.
 
 ################################################################################
 # VARIABLES
@@ -117,9 +118,19 @@ function unlock(){
 
 #___________________________________
 function info(){
-  echo cipher algorithm  = "${cipher_algorithm}"
-  echo hash algorithm = "${hash_algorithm}"
-  echo key size = "${keysize}"
+  
+  echo "LUKS header information for $device"
+  echo "luks-${now}"
+  
+  echo "Cipher alghoritm: ${cipher_alghoritm}"
+  echo "Hash algorithm: ${hash_algorithm}"
+  echo "Key size: ${keysize}"
+
+  echo "Device: ${device}"
+  echo "Mapper: /device/mapper/${crypdev}"
+  echo "Mountpoint: ${mountpoint}"
+  echo "Filesystem: ${filesystem}"
+
 }
 
 #____________________________________
@@ -291,6 +302,13 @@ function mount_vol(){
 
 
 #____________________________________
+function save_info(){
+  info > /etc/luks-cryptdev.info
+  cryptsetup luksDump $device >> "$LOGFILE" 2>&1
+}
+
+
+#____________________________________
 function end(){
   echo -e "\n$green Successful. Please exit by the VM/Docker. Galaxy will be automatically installed! $none"
 }
@@ -324,6 +342,9 @@ function encrypt(){
 
   # Mount volume
   mount_vol
+
+  # Save info file on /etc
+  save_info
 
 }
 

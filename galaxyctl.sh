@@ -160,6 +160,7 @@ fi
 ################################################################################
 # STORAGE FUNCTIONS
 
+
 cryptdev_conf_file='/etc/luks-cryptdev.conf'
 
 #____________________________________
@@ -172,6 +173,8 @@ function check_cryptdev(){
 
 }
 
+
+#____________________________________
 function get_luksUUID(){
 
   echo "TBU"
@@ -179,8 +182,8 @@ function get_luksUUID(){
 
 }
 
-#____________________________________
 
+#____________________________________
 function __luksopen_cryptdev(){
   source ${cryptdev_conf_file}
   cryptsetup luksOpen /dev/disk/by-uuid/${UUID} ${CRYPTDEV}
@@ -196,3 +199,23 @@ function __luksopen_cryptdev(){
 if [ "$1" == cryptdevice ]; then
   if [ "$2" == open ]; then __luksopen_cryptdev; fi
 fi
+
+
+################################################################################
+# PRODUCTION ENVIRONMENT FUNCTION
+
+
+#____________________________________
+function __init(){
+  echo "TBU"
+  dmsetup info /dev/mapper/
+}
+
+#
+# Production environment options
+#
+
+if [ "$1" == server ]; then
+  if [ "$2" == init ]; then __init; fi
+fi
+

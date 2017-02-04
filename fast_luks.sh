@@ -122,12 +122,12 @@ function info(){
   echo "#LUKS header information for $device"
   echo "#luks-${now}"
   
-  echo "CIPHER_ALGORITHM: ${cipher_alghoritm}"
+  echo "CIPHER_ALGORITHM: ${cipher_algorithm}"
   echo "HASH_ALGORITHM: ${hash_algorithm}"
   echo "KEYSIZE: ${keysize}"
 
   echo "DEVICE: ${device}"
-  echo "MAPPER: /device/mapper/${crypdev}"
+  echo "MAPPER: /device/mapper/${cryptdev}"
   echo "MOUNTPOINT: ${mountpoint}"
   echo "FILESYSTEM: ${filesystem}"
 
@@ -303,10 +303,18 @@ function mount_vol(){
 
 #____________________________________
 function save_info(){
-  echo -e "# This file has been generated using fast_luks.sh script: https://github.com/mtangaro/galaxycloud-testing/blob/master/fast_luks.sh" > /etc/luks-cryptdev.conf
+
+  # Create crypdev conf file
+  luks_cryptdev_file=/etc/luks-cryptdev.conf
+  echo -e "# This file has been generated using fast_luks.sh script: https://github.com/mtangaro/galaxycloud-testing/blob/master/fast_luks.sh" > ${luks_cryptdev_file}
+  echo -e "The device name could change after reboot, please use UUID instead." >> ${luks_cryptdev_file}
+  echo -e "LUKS provides a UUID \(Universally Unique Identifier\) \for each device. This, unlike the device name \(eg: /dev/vdb\), is guaranteed to remain constant as long as the LUKS header remains intact." >> ${luks_cryptdev_file}
   info >> /etc/luks-cryptdev.conf
-  cryptsetup -v status $cryptdev >> /etc/luks-${now}.info
-  cryptsetup luksDump $device >> /etc/luks-${now}.info
+  uuid=$(cryptsetup luksUUID ${device})
+  echo -e "UUID: ${uuid}" >> /etc/luks-cryptdev.conf 
+
+  # Update Log file
+  dmsetup info /dev/mapper/${cryptdev} >> "$LOGFILE" 2>&11
   cryptsetup luksDump $device >> "$LOGFILE" 2>&11
 }
 

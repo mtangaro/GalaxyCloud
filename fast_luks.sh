@@ -308,7 +308,7 @@ function save_info(){
   luks_cryptdev_file='/etc/luks-cryptdev.conf'
   echo -e "# This file has been generated using fast_luks.sh script: https://github.com/mtangaro/galaxycloud-testing/blob/master/fast_luks.sh" > ${luks_cryptdev_file}
   echo -e "# The device name could change after reboot, please use UUID instead." >> ${luks_cryptdev_file}
-  echo -e "# LUKS provides a UUID \(Universally Unique Identifier\) \for each device. This, unlike the device name \(eg: /dev/vdb\), is guaranteed to remain constant as long as the LUKS header remains intact.\n\n\n" >> ${luks_cryptdev_file}
+  echo -e "# LUKS provides a UUID \(Universally Unique Identifier\) \for each device. This, unlike the device name \(eg: /dev/vdb\), is guaranteed to remain constant as long as the LUKS header remains intact.\n" >> ${luks_cryptdev_file}
   info >> ${luks_cryptdev_file}
   uuid=$(cryptsetup luksUUID ${device})
   echo -e "UUID='${uuid}'" >> ${luks_cryptdev_file}

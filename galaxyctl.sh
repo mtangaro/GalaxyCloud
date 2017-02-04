@@ -49,10 +49,10 @@ function __load_galaxy_env(){
 function __check_supervisord(){
   if ps ax | grep -v grep | grep supervisord > /dev/null
   then
-    echo "Supervisord service running, everything is fine."
+    echo -e "\nSupervisord service running, everything is fine."
     return 0
   else
-    echo "supervisord is not running."
+    echo -e "\nsupervisord is not running."
     return 1
   fi
 }

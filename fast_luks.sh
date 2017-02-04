@@ -303,8 +303,11 @@ function mount_vol(){
 
 #____________________________________
 function save_info(){
-  info > /etc/luks-cryptdev.info
-  cryptsetup luksDump $device >> "$LOGFILE" 2>&1
+  echo -e "# This file has been generated using fast_luks.sh script: https://github.com/mtangaro/galaxycloud-testing/blob/master/fast_luks.sh" > /etc/luks-cryptdev.conf
+  info >> /etc/luks-cryptdev.conf
+  cryptsetup -v status $cryptdev >> /etc/luks-${now}.info
+  cryptsetup luksDump $device >> /etc/luks-${now}.info
+  cryptsetup luksDump $device >> "$LOGFILE" 2>&11
 }
 
 

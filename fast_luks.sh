@@ -119,17 +119,17 @@ function unlock(){
 #___________________________________
 function info(){
   
-  echo "#LUKS header information for $device"
-  echo "#luks-${now}"
+  echo -e "#LUKS header information for $device"
+  echo -e "#luks-${now}\n"
   
-  echo "CIPHER_ALGORITHM: ${cipher_algorithm}"
-  echo "HASH_ALGORITHM: ${hash_algorithm}"
-  echo "KEYSIZE: ${keysize}"
-
-  echo "DEVICE: ${device}"
-  echo "MAPPER: /device/mapper/${cryptdev}"
-  echo "MOUNTPOINT: ${mountpoint}"
-  echo "FILESYSTEM: ${filesystem}"
+  echo -e "CIPHER_ALGORITHM='${cipher_algorithm}'"
+  echo -e "HASH_ALGORITHM='${hash_algorithm}'"
+  echo -e "KEYSIZE='${keysize}'"
+  echo -e "\n"
+  echo "DEVIC='${device}'"
+  echo "MAPPER='/device/mapper/${cryptdev}'"
+  echo "MOUNTPOINT='${mountpoint}'"
+  echo "FILESYSTEM='${filesystem}'"
 
 }
 
@@ -311,7 +311,7 @@ function save_info(){
   echo -e "# LUKS provides a UUID \(Universally Unique Identifier\) \for each device. This, unlike the device name \(eg: /dev/vdb\), is guaranteed to remain constant as long as the LUKS header remains intact.\n\n\n" >> ${luks_cryptdev_file}
   info >> ${luks_cryptdev_file}
   uuid=$(cryptsetup luksUUID ${device})
-  echo -e "UUID: ${uuid}" >> ${luks_cryptdev_file}
+  echo -e "UUID='${uuid}'" >> ${luks_cryptdev_file}
 
   # Update Log file
   dmsetup info /dev/mapper/${cryptdev} >> "$LOGFILE" 2>&11
@@ -366,16 +366,16 @@ function encrypt(){
 
 STAT="script_name"
 #LOGFILE="/tmp/luks$inow.log"
-LOGFILE="/tmp/fast_cryptsetup.log"
+LOGFILE="/tmp/fast_luks.log"
 
 # Default values
-cipher_algorithm=aes-xts-plain64
-keysize=256
-hash_algorithm=sha256
-device="/dev/vdb"
-cryptdev="crypt"
-mountpoint="/export"
-filesystem="ext4"
+cipher_algorithm='aes-xts-plain64'
+keysize='256'
+hash_algorithm='sha256'
+device='/dev/vdb'
+cryptdev='crypt'
+mountpoint='/export'
+filesystem='ext4'
 
 #---
 # Create lock file. Ensure only single instance running.

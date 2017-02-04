@@ -157,6 +157,7 @@ fi
 ################################################################################
 # STORAGE FUNCTIONS
 
+cryptdev_conf_file='/etc/luks-cryptdev.conf'
 
 #____________________________________
 # check encrypted storage mounted
@@ -164,6 +165,7 @@ fi
 function check_cryptdev(){
 
   echo "TBU"
+  #dmsetup info /dev/mapper/${cryptdev}
 
 }
 
@@ -176,9 +178,12 @@ function get_luksUUID(){
 
 #____________________________________
 
-function luksopen_cryptdev(){
-
-  echo "TBU"
-  # cryptsetup luksOpen /dev/disk/by-uuid/5e4918f7-43a0-4e99-8b6d-316ab90d7f0b cryptdev
-
+function __luksopen_cryptdev(){
+  source ${cryptdev_conf_file}
+  cryptsetup luksOpen /dev/disk/by-uuid/${UUID} ${CRYPTDEV}
+  dmsetup info /dev/mapper/${CRYPTDEV}
 }
+
+if [ "$1" == cryptdevice ]; then
+  if [ "$2" == open ]; then __luksopen_cryptdev; fi
+fi

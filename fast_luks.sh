@@ -126,8 +126,9 @@ function info(){
   echo -e "HASH_ALGORITHM='${hash_algorithm}'"
   echo -e "KEYSIZE='${keysize}'"
   echo -e "\n"
-  echo "DEVIC='${device}'"
-  echo "MAPPER='/device/mapper/${cryptdev}'"
+  echo "DEVICE='${device}'"
+  echo "CRYPTDEV='${cryptdev}'"
+  echo "MAPPER='/dev/mapper/${cryptdev}'"
   echo "MOUNTPOINT='${mountpoint}'"
   echo "FILESYSTEM='${filesystem}'"
 

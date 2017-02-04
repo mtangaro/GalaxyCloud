@@ -30,7 +30,7 @@ normal="\033[0m"
 # GALAXY FUNCTIONS
 
 supervisord_conf_path=/etc
-supervisord_conf_file=${supervisord_conf_path}/supervisord.con
+supervisord_conf_file=${supervisord_conf_path}/supervisord.conf
 
 #____________________________________
 # Load Galaxy environment
@@ -143,6 +143,9 @@ function __restart_galaxy(){
   __start_galaxy
 }
 
+#
+# Galaxy options
+#
 
 if [ "$1" == "galaxy" ]; then
   if [ "$2" == "start" ]; then __start_galaxy; fi
@@ -182,7 +185,13 @@ function __luksopen_cryptdev(){
   source ${cryptdev_conf_file}
   cryptsetup luksOpen /dev/disk/by-uuid/${UUID} ${CRYPTDEV}
   dmsetup info /dev/mapper/${CRYPTDEV}
+  mount /dev/mapper/${CRYPTDEV} $MOUNTPOINT
+  chown galaxy:galaxy $MOUNTPOINT 
 }
+
+#
+# Cryptdevice options
+#
 
 if [ "$1" == cryptdevice ]; then
   if [ "$2" == open ]; then __luksopen_cryptdev; fi

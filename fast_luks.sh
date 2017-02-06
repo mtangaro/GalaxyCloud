@@ -315,8 +315,8 @@ function save_info(){
   echo -e "UUID='${uuid}'" >> ${luks_cryptdev_file}
 
   # Update Log file
-  dmsetup info /dev/mapper/${cryptdev} >> "$LOGFILE" 2>&11
-  cryptsetup luksDump $device >> "$LOGFILE" 2>&11
+  dmsetup info /dev/mapper/${cryptdev} >> "$LOGFILE" 2>&1
+  cryptsetup luksDump $device >> "$LOGFILE" 2>&1
 }
 
 

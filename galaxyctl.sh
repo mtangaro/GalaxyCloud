@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Galaxy central management tool
+# This script requires msetup and cryptsetup.
+# Needs to be launched as superuser.
 #
 # Author: Marco Tangaro
 # mail: ma.tangaro@gmail.com
@@ -166,10 +168,10 @@ cryptdev_conf_file='/etc/luks-cryptdev.conf'
 #____________________________________
 # check encrypted storage mounted
 
-function check_cryptdev(){
+function __dmsetup_info(){
 
   echo "TBU"
-  #dmsetup info /dev/mapper/${cryptdev}
+  dmsetup info /dev/mapper/${CRYPTDEV}
 
 }
 
@@ -185,7 +187,6 @@ function get_luksUUID(){
 
 #____________________________________
 function __luksopen_cryptdev(){
-  source ${cryptdev_conf_file}
   cryptsetup luksOpen /dev/disk/by-uuid/${UUID} ${CRYPTDEV}
   dmsetup info /dev/mapper/${CRYPTDEV}
   mount /dev/mapper/${CRYPTDEV} $MOUNTPOINT
@@ -207,8 +208,13 @@ fi
 
 #____________________________________
 function __init(){
-  echo "TBU"
-  dmsetup info /dev/mapper/
+  echo "TBU server init"
+  __dmsetup_info &>/dev/null
+  if [ $? -eq 0 ]; then
+    echo -e "Encrypted volume: [$green OK $none]"
+  else
+    echo -e "Encrypted volume [$red FAIL $none]"
+  fi
 }
 
 #
@@ -216,6 +222,8 @@ function __init(){
 #
 
 if [ "$1" == server ]; then
+  echo -e "Sourcing luks-cryptdev.conf..."
+  source ${cryptdev_conf_file}
   if [ "$2" == init ]; then __init; fi
 fi
 

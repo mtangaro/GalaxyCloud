@@ -129,19 +129,18 @@ function __start_galaxy(){
 function __stop_galaxy(){
   __load_galaxy_env
 
-  echo -e "\nStopping galaxy from supervisord:\n"
+  echo -e "\nStopping galaxy using supervisord:\n"
   supervisorctl stop galaxy:
 
   echo -e "\nuWSGI nodes check: "
-  if [ "$(pidof uwsgi)" ]
-  then
-    # process was found
-    echo -ne "\nKilling uwsgi residual nodes: "
+  if [ "$(pidof uwsgi)" ]; then
+    # processes found
+    echo -ne "  Killing uwsgi residual nodes: "
     kill -9 $(pidof uwsgi)
     echo -ne "${_ok}\n"
   else
   # process not found
-  echo -e "\nuWSGI already gracefully stopped"
+  echo -ne "  uWSGI graceful stop ${_ok}\n"
   fi
 }
 

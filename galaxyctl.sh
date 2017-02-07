@@ -154,6 +154,20 @@ function __restart_galaxy(){
   __start_galaxy
 }
 
+
+#____________________________________
+function __galaxy_help(){
+  echo -e "\nGalaxy options:"
+  echo -e '- start [start the Galaxy server]'
+  echo -e '- stop [stop the Galaxy server]'
+  echo -e '- restart [restart the Galaxy server]'
+  echo -e '- status [check the status of the whole service]'
+  echo -e '- on-line [check if Galaxy is Up and Running]'
+  echo -e '- ps [check uWSGI processes with ps]'
+  echo -e '- load-env [load Galaxy virtual environment'
+  echo -e '- help [print-out Galaxy options]'
+}
+
 #
 # Galaxy options
 #
@@ -166,6 +180,7 @@ if [ "$1" == "galaxy" ]; then
   if [ "$2" == "on-line" ]; then __galaxy_url_status; fi
   if [ "$2" == "ps" ]; then __galaxy_ps; fi
   if [ "$2" == "load-env" ]; then __load_galaxy_env; fi
+  if [ "$2" == "help" ]; then __galaxy_help; fi
 fi
 
 
@@ -182,15 +197,14 @@ function __dmsetup_info(){
   dmsetup info /dev/mapper/${CRYPTDEV}
 }
 
-
-#____________________________________
-function get_luksUUID(){
-
-  echo "TBU"
-  # cryptsetup luksUUID /dev/vdb 
-
+function __cryptdev_status(){
+  __dmsetup_info &>/dev/null
+  if [ $? -eq 0 ]; then
+    echo -e "\nEncrypted volume: ${_ok}"
+  else
+    echo -e "\nEncrypted volume : ${_fail}"
+  fi
 }
-
 
 #____________________________________
 function __luksopen_cryptdev(){
@@ -200,12 +214,23 @@ function __luksopen_cryptdev(){
   chown galaxy:galaxy $MOUNTPOINT 
 }
 
+
+#____________________________________
+function __cryptdev_help(){
+  echo -e "\nEncrypted volume options:"
+  echo -e '- open [use luks to open volume]'
+  echo -e '- close [TO BE IMPLEMENTED]'
+  echo -e '- status [check volume status]'
+}
 #
 # Cryptdevice options
 #
 
 if [ "$1" == cryptdevice ]; then
-  if [ "$2" == open ]; then __luksopen_cryptdev; fi
+  source $cryptdev_conf_file
+  if [ "$2" == 'open' ]; then __luksopen_cryptdev; fi
+  if [ "$2" == 'status' ]; then __cryptdev_status; fi
+  if [ "$2" == 'help' ]; then __cryptdev_help; fi
 fi
 
 
@@ -221,7 +246,13 @@ function __intro(){
   echo -e "   ELIXIR-IIB Galaxy Central Management Tool - Alpha Version\n"
   echo -e "   Instance IP address: $IP"
   echo -e "   Instane Brand: $BRAND"
+  echo -e "\n   Type \"galaxyctl server help\" to print out options"
   echo -e "==============================================================="
+}
+
+function __help(){
+  __cryptdev_help
+  __galaxy_help
 }
 
 #____________________________________
@@ -259,7 +290,9 @@ function __init(){
 
 if [ "$1" == server ]; then
   __intro
+  if [ "$2" == 'help' ]; then __help; fi
   source ${cryptdev_conf_file}
-  if [ "$2" == init ]; then __init; fi
+  if [ "$2" == 'init' ]; then __init; fi
+  if [ "$2" == 'status' ]; then __cryptdev_status; __galaxy_url_status; fi
 fi
 

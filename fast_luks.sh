@@ -49,7 +49,8 @@ function intro(){
 # http://wiki.bash-hackers.org/howto/mutex
 # "trap -l" for signal summary
 
-LOCKDIR=/tmp/fast_cryptsetup #TODO /var/lock/fast_cryptsetup.lock
+LOCKDIR=/var/run/
+#LOCKDIR=/tmp/fast_cryptsetup #TODO /var/lock/fast_cryptsetup.lock
 PIDFILE=${LOCKDIR}/fast_cryptsetup.pid
 
 # exit codes and text for them - additional features nobody needs :-)
@@ -366,8 +367,8 @@ function encrypt(){
 # Main script
 
 STAT="script_name"
-#LOGFILE="/tmp/luks$inow.log"
-LOGFILE="/tmp/fast_luks.log"
+LOGFILE="/tmp/luks$inow.log"
+#LOGFILE="/tmp/fast_luks.log"
 
 # Default values
 cipher_algorithm='aes-xts-plain64'

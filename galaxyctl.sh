@@ -157,15 +157,16 @@ function __restart_galaxy(){
 
 #____________________________________
 function __galaxy_help(){
-  echo -e "\nGalaxy options:"
-  echo -e '- start [start the Galaxy server]'
-  echo -e '- stop [stop the Galaxy server]'
-  echo -e '- restart [restart the Galaxy server]'
-  echo -e '- status [check the status of the whole service]'
-  echo -e '- on-line [check if Galaxy is Up and Running]'
-  echo -e '- ps [check uWSGI processes with ps]'
-  echo -e '- load-env [load Galaxy virtual environment'
-  echo -e '- help [print-out Galaxy options]'
+  echo -e "\nUsage: galaxyctl galaxy <option>"
+  echo -e "\nGalaxy options:\n"
+  echo -e '  - help [print-out Galaxy options]\n'
+  echo -e '  - start [start the Galaxy server]\n'
+  echo -e '  - stop [stop the Galaxy server]\n'
+  echo -e '  - restart [restart the Galaxy server]\n'
+  echo -e '  - status [check the status of the whole service]\n'
+  echo -e '  - on-line [check if Galaxy is Up and Running]\n'
+  echo -e '  - ps [check uWSGI processes with ps]\n'
+  echo -e '  - load-env [load Galaxy virtual environment]\n'
 }
 
 #
@@ -202,7 +203,7 @@ function __cryptdev_status(){
   if [ $? -eq 0 ]; then
     echo -e "\nEncrypted volume: ${_ok}"
   else
-    echo -e "\nEncrypted volume : ${_fail}"
+    echo -e "\nEncrypted volume: ${_fail}"
   fi
 }
 
@@ -211,10 +212,24 @@ function __luksopen_cryptdev(){
   cryptsetup luksOpen /dev/disk/by-uuid/${UUID} ${CRYPTDEV}
   dmsetup info /dev/mapper/${CRYPTDEV}
   mount /dev/mapper/${CRYPTDEV} $MOUNTPOINT
-  chown galaxy:galaxy $MOUNTPOINT 
+  code=$?
+  if [ "$code" -ne 0 ]; then
+    return 31 # return error code 0
+  else 
+    chown galaxy:galaxy $MOUNTPOINT
+    return 0 # return success
+  fi
 }
 
-
+function __cryptdev_open(){
+  __luksopen_cryptdev
+  code=$?
+  if [ "$code" -eq "0" ]; then
+    __cryptdev_status
+  else
+    echo -e "\nEncrypted volume mount: ${_fail}"
+  fi
+}
 #____________________________________
 function __luksclose_cryptdev(){
   umount $MOUNTPOINT
@@ -222,16 +237,24 @@ function __luksclose_cryptdev(){
 }
 
 function __cryptdev_close(){
-  echo "TBU"
+  __luksclose_cryptdev
+  __dmsetup_info &>/dev/null
+  if [ $? -eq 0 ]; then
+    echo -e "\nEncrypted volume umount: ${_fail}"
+  else
+    echo -e "\nEncrypted volume umount: ${_ok}"
+  fi
 
 }
 
 #____________________________________
 function __cryptdev_help(){
-  echo -e "\nEncrypted volume options:"
-  echo -e '- open [use luks to open volume]'
-  echo -e '- close [TO BE IMPLEMENTED]'
-  echo -e '- status [check volume status]'
+  echo -e "\nUsage: galaxyctl cryptdevice <option>"
+  echo -e "\nEncrypted volume options:\n"
+  echo -e "  - help [print-out cryptdevice options]\n"
+  echo -e '  - open [luks open and mount volume]\n'
+  echo -e '  - close [luks close and umount volume]\n'
+  echo -e '  - status [check volume status]\n'
 }
 #
 # Cryptdevice options
@@ -239,8 +262,8 @@ function __cryptdev_help(){
 
 if [ "$1" == cryptdevice ]; then
   source $cryptdev_conf_file
-  if [ "$2" == 'open' ]; then __luksopen_cryptdev; fi
-  if [ "$2" == 'close' ]; then __luksclose_cryptdev; fi
+  if [ "$2" == 'open' ]; then __cryptdev_open; fi
+  if [ "$2" == 'close' ]; then __cryptdev_close; fi
   if [ "$2" == 'status' ]; then __cryptdev_status; fi
   if [ "$2" == 'help' ]; then __cryptdev_help; fi
 fi
@@ -263,6 +286,12 @@ function __intro(){
 }
 
 function __help(){
+  echo -e "\nUsage: galaxyctl server <option>"
+  echo -e "\nOptions:\n"
+  echo -e "  - help [print-out help]\n"
+  echo -e "  - status [display server status]\n"
+  echo -e "  - init [init services]\n"
+
   __cryptdev_help
   __galaxy_help
 }

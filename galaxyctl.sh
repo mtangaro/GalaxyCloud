@@ -216,6 +216,17 @@ function __luksopen_cryptdev(){
 
 
 #____________________________________
+function __luksclose_cryptdev(){
+  umount $MOUNTPOINT
+  cryptsetup close ${CRYPTDEV}
+}
+
+function __cryptdev_close(){
+  echo "TBU"
+
+}
+
+#____________________________________
 function __cryptdev_help(){
   echo -e "\nEncrypted volume options:"
   echo -e '- open [use luks to open volume]'
@@ -229,6 +240,7 @@ function __cryptdev_help(){
 if [ "$1" == cryptdevice ]; then
   source $cryptdev_conf_file
   if [ "$2" == 'open' ]; then __luksopen_cryptdev; fi
+  if [ "$2" == 'close' ]; then __luksclose_cryptdev; fi
   if [ "$2" == 'status' ]; then __cryptdev_status; fi
   if [ "$2" == 'help' ]; then __cryptdev_help; fi
 fi
@@ -275,7 +287,7 @@ function __init(){
   #---
   # Galaxy section
   if __galaxy_curl; then
-    echo -e "\nOn-line server: ${_ok}"
+    echo -e "\nGalaxy server on-line: ${_ok}"
   else
     __start_galaxy
     __galaxy_url_status

@@ -51,7 +51,7 @@ function intro(){
 
 LOCKDIR=/var/run/
 #LOCKDIR=/tmp/fast_cryptsetup #TODO /var/lock/fast_cryptsetup.lock
-PIDFILE=${LOCKDIR}/fast_cryptsetup.pid
+PIDFILE=${LOCKDIR}/fast_luks.pid
 
 # exit codes and text for them - additional features nobody needs :-)
 ENO_SUCCESS=0; ETXT[0]="ENO_SUCCESS"

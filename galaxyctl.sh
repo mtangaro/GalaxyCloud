@@ -213,7 +213,10 @@ function __init(){
   if [ $? -eq 0 ]; then
     echo -e "Encrypted volume: [$green OK $none]"
   else
-    echo -e "Encrypted volume [$red FAIL $none]"
+    echo -e "Mounting encrypted volume..."
+    __luksopen_cryptdev
+    __init
+    #echo -e "Encrypted volume [$red FAIL $none]"
   fi
 }
 

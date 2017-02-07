@@ -30,6 +30,8 @@ _ok="[$green OK $none]"
 _stop="[ STOP ]"
 _fail=" [$red FAIL $none]"
 
+
+
 ################################################################################
 # GALAXY FUNCTIONS
 
@@ -72,9 +74,9 @@ function __galaxy_curl(){
 
 function __galaxy_url_status(){
   if __galaxy_curl; then 
-    echo -e "\nOn-line server: ${_ok}"
+    echo -e "\nGalaxy server on-line: ${_ok}"
   else
-    echo -e "\nOn-line server: ${_fail}"
+    echo -e "\nGalaxy server on-line: ${_fail}"
   fi
 }
 
@@ -162,6 +164,7 @@ if [ "$1" == "galaxy" ]; then
   if [ "$2" == "stop" ]; then __stop_galaxy; fi
   if [ "$2" == "restart" ]; then __restart_galaxy; fi
   if [ "$2" == "status" ]; then __galaxy_status; fi
+  if [ "$2" == "on-line" ]; then __galaxy_url_status; fi
   if [ "$2" == "ps" ]; then __galaxy_ps; fi
   if [ "$2" == "load-env" ]; then __load_galaxy_env; fi
 fi
@@ -210,6 +213,17 @@ fi
 ################################################################################
 # PRODUCTION ENVIRONMENT FUNCTION
 
+# Print out intro banner
+IP='90.147.102.96'
+BRAND='INDIGO-CNR testing instance'
+
+function __intro(){
+  echo -e "==============================================================="
+  echo -e "   ELIXIR-IIB Galaxy Central Management Tool - Alpha Version\n"
+  echo -e "   Instance IP address: $IP"
+  echo -e "   Instane Brand: $BRAND"
+  echo -e "==============================================================="
+}
 
 #____________________________________
 function __init(){
@@ -245,6 +259,7 @@ function __init(){
 #
 
 if [ "$1" == server ]; then
+  __intro
   source ${cryptdev_conf_file}
   if [ "$2" == init ]; then __init; fi
 fi

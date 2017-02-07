@@ -25,8 +25,10 @@ green="\033[32m"
 blue="\033[34m"
 normal="\033[0m"
 
-
-
+# ok and fail variables
+_ok="[$green OK $none]"
+_stop="[ STOP ]"
+_fail=" [$red FAIL $none]"
 
 ################################################################################
 # GALAXY FUNCTIONS
@@ -38,9 +40,10 @@ supervisord_conf_file=${supervisord_conf_path}/supervisord.conf
 # Load Galaxy environment
 
 function __load_galaxy_env(){
-  echo -e "\nLoading Galaxy environment"
+  echo -ne "\nLoading Galaxy virtual environment: "
   cd /home/galaxy/galaxy
   . /home/galaxy/galaxy/.venv/bin/activate
+  echo -ne "${_ok}\n"
 }
 
 
@@ -51,10 +54,10 @@ function __load_galaxy_env(){
 function __check_supervisord(){
   if ps ax | grep -v grep | grep supervisord > /dev/null
   then
-    echo -e "\nSupervisord service running, everything is fine."
+    echo -e "\nSupervisord service: ${_ok}"
     return 0
   else
-    echo -e "\nsupervisord is not running."
+    echo -e "\nSupervisord service: ${_fail}."
     return 1
   fi
 }
@@ -63,13 +66,16 @@ function __check_supervisord(){
 #____________________________________
 # Check if Galaxy instance is up
 
-function __galaxy_url_status(){
-  if curl -s --head  --request GET http://90.147.102.96/galaxy | grep "200 OK" > /dev/null; then 
-    echo -e "$green""GALAXY IS UP AND RUNNING""$none"
-  else
-    echo -e "$red""GALAXY IS DOWN""$none"
-  fi
+function __galaxy_curl(){
+  curl -s --head  --request GET http://90.147.102.96/galaxy | grep "200 OK" > /dev/null
+}
 
+function __galaxy_url_status(){
+  if __galaxy_curl; then 
+    echo -e "\nOn-line server: ${_ok}"
+  else
+    echo -e "\nOn-line server: ${_fail}"
+  fi
 }
 
 
@@ -85,7 +91,7 @@ function __galaxy_server_status(){
 #____________________________________
 
 function __galaxy_ps(){
-  ps -aux | grep "uwsgi"
+  ps -aux | grep "[u]wsgi" # brackets needed to avoid grep showing itself
 }
 
 
@@ -93,8 +99,8 @@ function __galaxy_ps(){
 # Check if Galaxy instance is up
 
 function __galaxy_status(){
-  echo -e "\nUrl status:"; __galaxy_url_status
-  echo -e "\nSupervisctl status:"; __galaxy_server_status
+  __galaxy_url_status
+  echo -e "\nSupervisorctl status:"; __galaxy_server_status
   echo -e "\nuWSGI status:"; __galaxy_ps
 }
 
@@ -105,8 +111,9 @@ function __start_galaxy(){
   __load_galaxy_env
 
   if __check_supervisord ; then
-    echo -e "\nStarting Galaxy"
+    echo -e "\nStarting Galaxy: "
     supervisorctl start galaxy:
+    
   else
     echo -e "\nStarting supervisord, Galaxy will be automatically started."
     /usr/bin/supervisord -c $supervisord_conf_file
@@ -120,15 +127,16 @@ function __start_galaxy(){
 function __stop_galaxy(){
   __load_galaxy_env
 
-  echo -e "\nStopping galaxy from supervisord"
+  echo -e "\nStopping galaxy from supervisord:\n"
   supervisorctl stop galaxy:
 
-  echo -e "\nuWSGI nodes check"
+  echo -e "\nuWSGI nodes check: "
   if [ "$(pidof uwsgi)" ]
   then
-  # process was found
-  echo -e "\nKilling uwsgi residual nodes"
-  kill -9 $(pidof uwsgi)
+    # process was found
+    echo -ne "\nKilling uwsgi residual nodes: "
+    kill -9 $(pidof uwsgi)
+    echo -ne "${_ok}\n"
   else
   # process not found
   echo -e "\nuWSGI already gracefully stopped"
@@ -155,7 +163,7 @@ if [ "$1" == "galaxy" ]; then
   if [ "$2" == "restart" ]; then __restart_galaxy; fi
   if [ "$2" == "status" ]; then __galaxy_status; fi
   if [ "$2" == "ps" ]; then __galaxy_ps; fi
-  if [ "$2" == "load_env" ]; then __load_galaxy_env; fi
+  if [ "$2" == "load-env" ]; then __load_galaxy_env; fi
 fi
 
 
@@ -169,10 +177,7 @@ cryptdev_conf_file='/etc/luks-cryptdev.conf'
 # check encrypted storage mounted
 
 function __dmsetup_info(){
-
-  echo "TBU"
   dmsetup info /dev/mapper/${CRYPTDEV}
-
 }
 
 
@@ -208,16 +213,31 @@ fi
 
 #____________________________________
 function __init(){
-  echo "TBU server init"
+
+  #---
+  # Encrypted volume section
   __dmsetup_info &>/dev/null
   if [ $? -eq 0 ]; then
-    echo -e "Encrypted volume: [$green OK $none]"
+    echo -e "\nEncrypted volume: ${_ok}"
   else
-    echo -e "Mounting encrypted volume..."
+    echo -e "\nMounting encrypted volume..."
     __luksopen_cryptdev
     __init
-    #echo -e "Encrypted volume [$red FAIL $none]"
   fi
+
+  #---
+  # Onedata section
+
+  #---
+  # Galaxy section
+  if __galaxy_curl; then
+    echo -e "\nOn-line server: ${_ok}"
+  else
+    __start_galaxy
+    __galaxy_url_status
+  fi
+
+  # TODO if galaxy is not up, check supervisor, if supervisor is running check uwsgi master state
 }
 
 #
@@ -225,7 +245,6 @@ function __init(){
 #
 
 if [ "$1" == server ]; then
-  echo -e "Sourcing luks-cryptdev.conf..."
   source ${cryptdev_conf_file}
   if [ "$2" == init ]; then __init; fi
 fi

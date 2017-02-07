@@ -31,7 +31,9 @@ do
 
     -m|--refdata-mountpoint) REFDATA_DIR=$2; shift;;
 
-    -k|--keysize) keysize="$2"; shift;;
+    -u|--userdata) USERDATA=YES;;
+
+    -a|--userdata-access-token) keysize="$2"; shift;;
 
     -a|--hash_algorithm) hash_algorithm="$2"; shift;;
 

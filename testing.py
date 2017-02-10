@@ -1,5 +1,6 @@
 '''
 testing macro
+ciao
 '''
 
 import argparse

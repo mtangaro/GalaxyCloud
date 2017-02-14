@@ -380,7 +380,9 @@ function __help(){
   __galaxy_help
 }
 
-#____________________________________
+#___________________________________
+# Galaxy production environment initialisation
+
 function __init(){
   # Encrypted volume section
 

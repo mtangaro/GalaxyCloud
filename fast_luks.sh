@@ -50,7 +50,6 @@ function intro(){
 # "trap -l" for signal summary
 
 LOCKDIR=/var/run/
-#LOCKDIR=/tmp/fast_cryptsetup #TODO /var/lock/fast_cryptsetup.lock
 PIDFILE=${LOCKDIR}/fast_luks.pid
 
 # exit codes and text for them - additional features nobody needs :-)
@@ -94,9 +93,9 @@ function lock(){
       else
         # lock is valid and OTHERPID is active - exit, we're locked!
         echo "Lock failed, PID ${OTHERPID} is active" >&2
-        echo "Another fast_cryptsetup process is active" >&2
-        echo "If you're sure fast_cryptsetup is not already running,"
-        echo "you can remove $LOCKDIR and restart fast_cryptsetup" >&2
+        echo "Another $STAT process is active" >&2
+        echo "If you're sure $STAT is not already running,"
+        echo "you can remove $LOCKDIR and restart $STAT" >&2
         exit ${ENO_LOCKFAIL}
       fi
     fi
@@ -366,9 +365,8 @@ function encrypt(){
 ################################################################################
 # Main script
 
-STAT="script_name"
+STAT="fast_luks"
 LOGFILE="/tmp/luks$inow.log"
-#LOGFILE="/tmp/fast_luks.log"
 
 # Default values
 cipher_algorithm='aes-xts-plain64'

@@ -11,6 +11,27 @@
 
 #oneclient --authentication token /refdata
 
+################################################################################
+# VARIABLES
+
+now=$(date +"-%b-%d-%y-%H%M%S")
+
+# colors for errors and warnings        
+red=$(tput setab 0; tput setaf 1)
+yellow=$(tput setab 0; tput setaf 3)
+none=$(tput sgr0)
+
+# colors for messages
+green="\033[32m"
+blue="\033[34m"
+normal="\033[0m"
+
+# ok and fail variables
+_ok="[$green OK $none]"
+_stop="[ STOP ]"
+_fail=" [$red FAIL $none]"
+
+
 
 function connect(){
 
@@ -31,6 +52,9 @@ function create_config_file(){
 # User data space
 
 #if [
+
+
+config_file='/etc/onedata-spaces.conf'
 
 
 # Parse CLI options
@@ -62,5 +86,5 @@ done
 if [ -z $config_file ]; then
   echo "var is unset"
 else
-  echo "var is set to '$config_file'"
+  source ${config_file}
 fi

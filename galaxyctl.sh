@@ -8,20 +8,12 @@
 # mail: ma.tangaro@gmail.com
 # 
 # LICENCE: Apache 2.0 software licence
+
 VERSION='0.0.1 (alpha)'
 DEBUG=false
 
 ################################################################################
 # VARIABLES
-
-IP="90.147.102.96"
-URL="http://${IP}/galaxy"
-BRAND='INDIGO-CNR testing instance'
-
-supervisord_conf_path=/etc
-supervisord_conf_file=${supervisord_conf_path}/supervisord.conf
-
-uwsgi_pidfile=/var/log/galaxy/uwsgi-master.pid
 
 # date
 now=$(date +"-%b-%d-%y-%H%M%S")
@@ -46,6 +38,15 @@ _fail=" [$red FAIL $none]"
 ################################################################################
 # GALAXY FUNCTIONS
 
+IP="90.147.102.96"
+URL="http://${IP}/galaxy"
+BRAND='INDIGO-CNR testing instance'
+
+supervisord_conf_path=/etc
+supervisord_conf_file=${supervisord_conf_path}/supervisord.conf
+
+uwsgi_pidfile=/var/log/galaxy/uwsgi-master.pid
+
 
 #____________________________________
 # Load Galaxy environment
@@ -56,7 +57,6 @@ function __load_galaxy_env(){
   . /home/galaxy/galaxy/.venv/bin/activate
   echo -ne "${_ok}\n"
 }
-
 
 #____________________________________
 # Check if supervisord is running
@@ -71,6 +71,8 @@ function __check_supervisord(){
   fi
 }
 
+#____________________________________
+# Check supervisord status
 
 function __supervisord_status(){
   __check_supervisord &> /dev/null
@@ -84,9 +86,8 @@ function __supervisord_status(){
   fi
 }
 
-
 #____________________________________
-# Check if Galaxy instance is up
+# Check if Galaxy instance by curl
 
 function __galaxy_curl(){
   if curl -s --head  --request GET ${URL} | grep "200 OK" > /dev/null
@@ -97,7 +98,9 @@ function __galaxy_curl(){
   fi
 }
 
-#---
+#____________________________________
+# Show galaxy status
+
 function __galaxy_url_status(){
   __galaxy_curl &> /dev/null
   code=$?
@@ -108,9 +111,10 @@ function __galaxy_url_status(){
   fi
 }
 
-#---
+#____________________________________
+# Wait Galaxy for 5 minuts, then give "connection timeout error"
+
 function __wait_galaxy(){
- 
   end=$((SECONDS+300)) # wait 5 minutes before exit
 
   __galaxy_curl &> /dev/null
@@ -135,20 +139,25 @@ function __wait_galaxy(){
     __galaxy_url_status
     return 0
   fi
-
 }
 
-#---
+#____________________________________
+# Display supervisorctl status output for Galaxy
+
 function __galaxy_server_status(){
   supervisorctl status galaxy:
 }
 
-#---
+#____________________________________
+# Display uwsgi ps output
+
 function __galaxy_ps(){
   ps -aux | grep "[u]wsgi" # brackets needed to avoid grep showing itself
 }
 
-#---
+#____________________________________
+# This function restart galaxy if the uWSGI master node is in "S" state. Needs uwsgi master node pid file to work.
+
 function __check_uwsgi_master_status(){
   stat=$(ps -o stat --no-headers -p $(cat ${uwsgi_pidfile}))
   if [ "$stat" != "Sl" ]; then
@@ -156,16 +165,18 @@ function __check_uwsgi_master_status(){
   fi
 }
 
-#---
+#____________________________________
+# Show Galaxy server status
+
 function __galaxy_status(){
   __galaxy_url_status
   echo -e "\nSupervisorctl status:"; __galaxy_server_status
   echo -e "\nuWSGI status:"; __galaxy_ps
 }
 
-
 #____________________________________
 # Define start function
+
 function __start_galaxy(){
   __load_galaxy_env
 
@@ -178,7 +189,6 @@ function __start_galaxy(){
   fi
   __wait_galaxy
 }
-
 
 #____________________________________
 # Define stop function
@@ -201,7 +211,6 @@ function __stop_galaxy(){
   fi
 }
 
-
 #____________________________________
 # Define restart function
 
@@ -211,8 +220,9 @@ function __restart_galaxy(){
   __start_galaxy
 }
 
-
 #____________________________________
+# Show Galaxy help
+
 function __galaxy_help(){
   echo -e "\nUsage: galaxyctl galaxy <option>"
   echo -e "\nGalaxy options:\n"
@@ -226,9 +236,8 @@ function __galaxy_help(){
   echo -e '  - load-env [load Galaxy virtual environment]\n'
 }
 
-#
+#____________________________________
 # Galaxy options
-#
 
 if [ "$1" == "galaxy" ]; then
   if [ "$2" == "start" ]; then __start_galaxy; fi
@@ -245,16 +254,17 @@ fi
 ################################################################################
 # STORAGE FUNCTIONS
 
-
 cryptdev_conf_file='/etc/luks-cryptdev.conf'
 
 #____________________________________
-# check encrypted storage mounted
+# Display dmsetup info
 
 function __dmsetup_info(){
   dmsetup info /dev/mapper/${CRYPTDEV}
 }
 
+#____________________________________
+# check encrypted storage mounted
 function __cryptdev_status(){
   __dmsetup_info &>/dev/null
   if [ $? -eq 0 ]; then
@@ -265,6 +275,8 @@ function __cryptdev_status(){
 }
 
 #____________________________________
+# luksOpen device
+
 function __luksopen_cryptdev(){
   cryptsetup luksOpen /dev/disk/by-uuid/${UUID} ${CRYPTDEV}
   dmsetup info /dev/mapper/${CRYPTDEV}
@@ -278,6 +290,9 @@ function __luksopen_cryptdev(){
   fi
 }
 
+#____________________________________
+# Open encrypted device
+
 function __cryptdev_open(){
   __luksopen_cryptdev
   code=$?
@@ -287,11 +302,17 @@ function __cryptdev_open(){
     echo -e "\nEncrypted volume mount: ${_fail}"
   fi
 }
+
 #____________________________________
+# luksClose device 
+
 function __luksclose_cryptdev(){
   umount $MOUNTPOINT
   cryptsetup close ${CRYPTDEV}
 }
+
+#____________________________________
+# Close encrypted device
 
 function __cryptdev_close(){
   __luksclose_cryptdev
@@ -301,10 +322,11 @@ function __cryptdev_close(){
   else
     echo -e "\nEncrypted volume umount: ${_ok}"
   fi
-
 }
 
 #____________________________________
+# Show Galaxy help
+
 function __cryptdev_help(){
   echo -e "\nUsage: galaxyctl cryptdevice <option>"
   echo -e "\nEncrypted volume options:\n"
@@ -313,9 +335,9 @@ function __cryptdev_help(){
   echo -e '  - close [luks close and umount volume]\n'
   echo -e '  - status [check volume status]\n'
 }
-#
+
+#____________________________________
 # Cryptdevice options
-#
 
 if [ "$1" == cryptdevice ]; then
   source $cryptdev_conf_file
@@ -331,19 +353,22 @@ fi
 
 #____________________________________
 # Print out intro banner
+
 function __intro(){
   echo -e "==============================================================="
   echo -e "   ELIXIR-IIB Galaxy Central Management Tool"
   echo -e ""
   echo -e "   Version: ${VERSION}"
-  echo -e "   Instance IP address: $IP"
-  echo -e "   Galaxy address: http://${IP}/galaxy"
-  echo -e "   Instane Brand: $BRAND"
+  echo -e "   Instance IP: $IP"
+  echo -e "   Galaxy url: http://${IP}/galaxy"
+  echo -e "   Galaxy brand: $BRAND"
   echo -e "\n   Type \"galaxyctl server help\" to print out options"
   echo -e "==============================================================="
 }
 
 #____________________________________
+# Show Galaxy production environment help
+
 function __help(){
   echo -e "\nUsage: galaxyctl server <option>"
   echo -e "\nOptions:\n"
@@ -357,9 +382,8 @@ function __help(){
 
 #____________________________________
 function __init(){
-
-  #---
   # Encrypted volume section
+
   __dmsetup_info &>/dev/null
   if [ $? -eq 0 ]; then
     echo -e "\nEncrypted volume: ${_ok}"
@@ -369,11 +393,12 @@ function __init(){
     __init
   fi
 
-  #---
+  
   # Onedata section
 
-  #---
+  
   # Galaxy section
+
   __galaxy_curl &> /dev/null
   code=$?
   if [[ $code -eq "0" ]]; then
@@ -385,9 +410,8 @@ function __init(){
   # TODO if galaxy is not up, check supervisor, if supervisor is running check uwsgi master state
 }
 
-#
+#____________________________________
 # Production environment options
-#
 
 if [ "$1" == server ]; then
   __intro
@@ -396,4 +420,3 @@ if [ "$1" == server ]; then
   if [ "$2" == 'init' ]; then __init; fi
   if [ "$2" == 'status' ]; then __cryptdev_status; __galaxy_url_status; fi
 fi
-

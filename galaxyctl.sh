@@ -8,11 +8,22 @@
 # mail: ma.tangaro@gmail.com
 # 
 # LICENCE: Apache 2.0 software licence
-
+VERSION='0.0.1 (alpha)'
+DEBUG=false
 
 ################################################################################
 # VARIABLES
 
+IP="90.147.102.96"
+URL="http://${IP}/galaxy"
+BRAND='INDIGO-CNR testing instance'
+
+supervisord_conf_path=/etc
+supervisord_conf_file=${supervisord_conf_path}/supervisord.conf
+
+uwsgi_pidfile=/var/log/galaxy/uwsgi-master.pid
+
+# date
 now=$(date +"-%b-%d-%y-%H%M%S")
 
 # colors for errors and warnings        
@@ -35,8 +46,6 @@ _fail=" [$red FAIL $none]"
 ################################################################################
 # GALAXY FUNCTIONS
 
-supervisord_conf_path=/etc
-supervisord_conf_file=${supervisord_conf_path}/supervisord.conf
 
 #____________________________________
 # Load Galaxy environment
@@ -56,6 +65,17 @@ function __load_galaxy_env(){
 function __check_supervisord(){
   if ps ax | grep -v grep | grep supervisord > /dev/null
   then
+    return 0
+  else
+    return 1
+  fi
+}
+
+
+function __supervisord_status(){
+  __check_supervisord &> /dev/null
+  code=$?
+  if [ $code -eq "0" ]; then
     echo -e "\nSupervisord service: ${_ok}"
     return 0
   else
@@ -69,37 +89,74 @@ function __check_supervisord(){
 # Check if Galaxy instance is up
 
 function __galaxy_curl(){
-  curl -s --head  --request GET http://90.147.102.96/galaxy | grep "200 OK" > /dev/null
+  if curl -s --head  --request GET ${URL} | grep "200 OK" > /dev/null
+  then
+    return 0
+  else
+    return 1
+  fi
 }
 
+#---
 function __galaxy_url_status(){
-  if __galaxy_curl; then 
+  __galaxy_curl &> /dev/null
+  code=$?
+  if [ $code -eq "0" ]; then 
     echo -e "\nGalaxy server on-line: ${_ok}"
   else
     echo -e "\nGalaxy server on-line: ${_fail}"
   fi
 }
 
+#---
+function __wait_galaxy(){
+ 
+  end=$((SECONDS+300)) # wait 5 minutes before exit
 
+  __galaxy_curl &> /dev/null
+  code=$?
+  if $DEBUG; then echo "First code: $code"; fi
+  
+  if [ $code -eq "1" ]; then
+    until [[ $code -eq "0" ]]; do
+      sleep 0.1
+      if $DEBUG; then echo "calling curl..."; fi
+      __galaxy_curl &> /dev/null
+      code=$? # update code var
+      if $DEBUG; then echo "code: $code"; fi
+      if [ $SECONDS -gt $end ]; then
+        echo -e "\nConnection time out. Galaxy server on-line: ${_fail}"
+        return 1
+      fi
+    done
+    __galaxy_url_status
+    return 0
+  else
+    __galaxy_url_status
+    return 0
+  fi
 
-#____________________________________
-# Check if Galaxy instance is up
+}
 
+#---
 function __galaxy_server_status(){
   supervisorctl status galaxy:
 }
 
-
-#____________________________________
-
+#---
 function __galaxy_ps(){
   ps -aux | grep "[u]wsgi" # brackets needed to avoid grep showing itself
 }
 
+#---
+function __check_uwsgi_master_status(){
+  stat=$(ps -o stat --no-headers -p $(cat ${uwsgi_pidfile}))
+  if [ "$stat" != "Sl" ]; then
+    __restart_galaxy
+  fi
+}
 
-#____________________________________
-# Check if Galaxy instance is up
-
+#---
 function __galaxy_status(){
   __galaxy_url_status
   echo -e "\nSupervisorctl status:"; __galaxy_server_status
@@ -112,14 +169,14 @@ function __galaxy_status(){
 function __start_galaxy(){
   __load_galaxy_env
 
+  echo -e "\nStarting Galaxy..."
+
   if __check_supervisord ; then
-    echo -e "\nStarting Galaxy: "
     supervisorctl start galaxy:
-    
   else
-    echo -e "\nStarting supervisord, Galaxy will be automatically started."
     /usr/bin/supervisord -c $supervisord_conf_file
   fi
+  __wait_galaxy
 }
 
 
@@ -129,18 +186,18 @@ function __start_galaxy(){
 function __stop_galaxy(){
   __load_galaxy_env
 
-  echo -e "\nStopping galaxy using supervisord:\n"
+  echo -e "\nStopping Galaxy using supervisord:\n"
   supervisorctl stop galaxy:
 
   echo -e "\nuWSGI nodes check: "
   if [ "$(pidof uwsgi)" ]; then
     # processes found
-    echo -ne "  Killing uwsgi residual nodes: "
+    echo -ne "Killing uwsgi residual nodes: "
     kill -9 $(pidof uwsgi)
     echo -ne "${_ok}\n"
   else
   # process not found
-  echo -ne "  uWSGI graceful stop ${_ok}\n"
+  echo -ne "uWSGI graceful stop: ${_ok}\n"
   fi
 }
 
@@ -178,7 +235,7 @@ if [ "$1" == "galaxy" ]; then
   if [ "$2" == "stop" ]; then __stop_galaxy; fi
   if [ "$2" == "restart" ]; then __restart_galaxy; fi
   if [ "$2" == "status" ]; then __galaxy_status; fi
-  if [ "$2" == "on-line" ]; then __galaxy_url_status; fi
+  if [ "$2" == "online" ]; then __galaxy_url_status; fi
   if [ "$2" == "ps" ]; then __galaxy_ps; fi
   if [ "$2" == "load-env" ]; then __load_galaxy_env; fi
   if [ "$2" == "help" ]; then __galaxy_help; fi
@@ -272,19 +329,21 @@ fi
 ################################################################################
 # PRODUCTION ENVIRONMENT FUNCTION
 
+#____________________________________
 # Print out intro banner
-IP='90.147.102.96'
-BRAND='INDIGO-CNR testing instance'
-
 function __intro(){
   echo -e "==============================================================="
-  echo -e "   ELIXIR-IIB Galaxy Central Management Tool - Alpha Version\n"
+  echo -e "   ELIXIR-IIB Galaxy Central Management Tool"
+  echo -e ""
+  echo -e "   Version: ${VERSION}"
   echo -e "   Instance IP address: $IP"
+  echo -e "   Galaxy address: http://${IP}/galaxy"
   echo -e "   Instane Brand: $BRAND"
   echo -e "\n   Type \"galaxyctl server help\" to print out options"
   echo -e "==============================================================="
 }
 
+#____________________________________
 function __help(){
   echo -e "\nUsage: galaxyctl server <option>"
   echo -e "\nOptions:\n"
@@ -315,11 +374,12 @@ function __init(){
 
   #---
   # Galaxy section
-  if __galaxy_curl; then
+  __galaxy_curl &> /dev/null
+  code=$?
+  if [[ $code -eq "0" ]]; then
     echo -e "\nGalaxy server on-line: ${_ok}"
   else
     __start_galaxy
-    __galaxy_url_status
   fi
 
   # TODO if galaxy is not up, check supervisor, if supervisor is running check uwsgi master state

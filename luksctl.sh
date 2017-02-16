@@ -154,9 +154,10 @@ function __cryptdev_help(){
 #____________________________________
 # Cryptdevice options
 
+__su_check
+
 if [ "$1" == luks ]; then
   source $cryptdev_conf_file
-  __su_check
   __cryptdev_intro
   if [ "$2" == 'open' ]; then __cryptdev_open; fi
   if [ "$2" == 'close' ]; then __cryptdev_close; fi

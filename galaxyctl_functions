@@ -11,6 +11,16 @@
 
 
 #____________________________________
+# Script needs superuser
+
+function __su_check(){
+  if [[ $(/usr/bin/id -u) -ne 0 ]]; then
+    echo -e "[Error] Not running as root: ${_fail}"
+    exit
+ fi
+}
+
+#____________________________________
 # Load Galaxy environment
 
 function __load_galaxy_env(){
@@ -200,6 +210,8 @@ function __galaxy_help(){
 
 #____________________________________
 # Galaxy options
+
+__su_check
 
 if [ "$1" == "galaxy" ]; then
   if [ "$2" == "start" ]; then __start_galaxy; fi

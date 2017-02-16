@@ -68,6 +68,17 @@ source ${luks_script_path}/luksctl.sh
 ################################################################################
 # PRODUCTION ENVIRONMENT SECTION
 
+
+#____________________________________
+# Script needs superuser
+
+function __su_check(){
+  if [[ $(/usr/bin/id -u) -ne 0 ]]; then
+    echo -e "[Error] Not running as root: ${_fail}"
+    exit
+ fi
+}
+
 #____________________________________
 # Print out intro banner
 
@@ -135,6 +146,8 @@ function __init(){
 
 #____________________________________
 # Production environment options
+
+__su_check
 
 if [ "$1" == server ]; then
   __intro

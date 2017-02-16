@@ -49,7 +49,7 @@ function intro(){
 # http://wiki.bash-hackers.org/howto/mutex
 # "trap -l" for signal summary
 
-LOCKDIR=/var/run
+LOCKDIR=/var/run/fast_luks
 PIDFILE=${LOCKDIR}/fast_luks.pid
 
 # exit codes and text for them - additional features nobody needs :-)

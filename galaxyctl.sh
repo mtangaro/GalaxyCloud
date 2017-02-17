@@ -15,24 +15,9 @@ DEBUG=false
 ################################################################################
 # VARIABLES
 
-# date
-now=$(date +"-%b-%d-%y-%H%M%S")
+common_vars_path=/home/galaxy/galaxycloud-testing
 
-# colors for errors and warnings        
-red=$(tput setab 0; tput setaf 1)
-yellow=$(tput setab 0; tput setaf 3)
-none=$(tput sgr0)
-
-# colors for messages
-green="\033[32m"
-blue="\033[34m"
-normal="\033[0m"
-
-# ok and fail variables
-_ok="[$green OK $none]"
-_stop="[ STOP ]"
-_fail=" [$red FAIL $none]"
-
+source ${common_vars_path}/galaxyctl_common_vars.sh
 
 
 ################################################################################

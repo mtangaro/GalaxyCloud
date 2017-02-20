@@ -34,8 +34,6 @@ normal="\033[0m"
 ################################################################################
 # FUNCTIONS
 
-
-
 #____________________________________
 # Print out intro banner
 function intro(){
@@ -50,7 +48,7 @@ function intro(){
 # "trap -l" for signal summary
 
 LOCKDIR=/var/run/fast_luks
-PIDFILE=${LOCKDIR}/fast_luks.pid
+PIDFILE=${LOCKDIR}/fast-luks.pid
 
 # exit codes and text for them - additional features nobody needs :-)
 ENO_SUCCESS=0; ETXT[0]="ENO_SUCCESS"
@@ -321,7 +319,8 @@ function save_info(){
 
 
 #____________________________________
-function end(){
+function __end(){
+  echo -e "LUKS encryption completed." > /tmp/fast-luks.out
   echo -e "\n$green Successful. Please exit by the VM/Docker. Galaxy will be automatically installed! $none"
 }
 
@@ -365,8 +364,8 @@ function encrypt(){
 ################################################################################
 # Main script
 
-STAT="fast_luks"
-LOGFILE="/tmp/luks$inow.log"
+STAT="fast-luks"
+LOGFILE="/tmp/luks$now.log"
 
 # Default values
 cipher_algorithm='aes-xts-plain64'
@@ -429,7 +428,6 @@ do
   info >> "$LOGFILE" 2>&1
 done
 
-
 if [[ -n $1 ]]; then
     echo "Last line of file specified as non-opt/last argument:"
     tail -1 $1
@@ -437,7 +435,6 @@ fi
 
 #---
 # Print Help
-
 if [ "${HELP}" = "YES" ]
   then
     echo -e "$green Print help... $normal"
@@ -452,8 +449,8 @@ check_cryptsetup
 encrypt
 
 #---
-# Done!
-end
+# LUKS encryption finished. Print end dialogue.
+__end
 
 #---
 # Unlock once done.

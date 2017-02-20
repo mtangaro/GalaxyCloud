@@ -367,7 +367,7 @@ function encrypt(){
 
 STAT="fast-luks"
 LOGFILE="/tmp/luks$now.log"
-SUCCESS_FILE="/etc/fast-luks.success"
+SUCCESS_FILE="/tmp/fast-luks.success"
 
 # Default values
 cipher_algorithm='aes-xts-plain64'

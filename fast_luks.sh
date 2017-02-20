@@ -276,7 +276,7 @@ function wipe_data(){
 function create_fs(){
   echo -e "\n==================================="
   echo -e "Creating filesystem..."
-  mkfs.${filesystem} /dev/mapper/${cryptdev} >> "${LOGFILE}" 2>&1
+  mkfs.${filesystem} /dev/mapper/${cryptdev} #Do not redirect mkfs, otherwise no interactive mode!
   if [ $? != 0 ]; then
     echo -e "$red Error: while creating ${filesystem} filesystem. Please check logs: $LOGFILE $none"
     # log

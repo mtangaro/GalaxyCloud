@@ -171,7 +171,7 @@ function check_vol(){
   echo -e "\n==================================" >> "$LOGFILE" 2>&1
   echo -e "Check volume..." >> "$LOGFILE" 2>&1
 
-  if [ $(mount | grep -c $mountpoint) != 1 ]; then
+  if [ $(mount | grep -c $mountpoint) == 0 ]; then # grep -c counts recurrence number.
       echo -e "$red Device not mounted, exiting! $none"
       echo "Please check logs: $LOGFILE"
       #---

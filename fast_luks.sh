@@ -320,7 +320,8 @@ function save_info(){
 
 #____________________________________
 function __end(){
-  echo -e "LUKS encryption completed." > /tmp/fast-luks.out
+  # send signal to unclok waiting condition for automation software (e.g Ansible)
+  echo -e "LUKS encryption completed." > $SUCCESS_FILE
   echo -e "\n$green Successful. Please exit by the VM/Docker. Galaxy will be automatically installed! $none"
 }
 
@@ -366,6 +367,7 @@ function encrypt(){
 
 STAT="fast-luks"
 LOGFILE="/tmp/luks$now.log"
+SUCCESS_FILE="/etc/fast-luks.success"
 
 # Default values
 cipher_algorithm='aes-xts-plain64'

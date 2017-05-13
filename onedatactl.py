@@ -6,7 +6,11 @@ mail: ma.tangaro@ibbe.cnr.it
 
 import argparse
 import subprocess
-import ConfigParser
+
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
 
 fdefault = '/etc/galaxy/onedatactl.ini'
 
@@ -95,7 +99,8 @@ def onedatactl():
   if options.config_file:
     load_from_file(options.config_file, options.refdata, options.userdata)
   else:
-    print 'load manually'
+    if options.refdata: connect(options.provider, options.token, options.mountpoint)
+    if options.userdata: connect(options.provider, options.token, options.mountpoint)
 
 
   # check if volume is mounted

@@ -4,7 +4,7 @@ Author: Marco Tangaro
 mail: ma.tangaro@ibbe.cnr.it
 '''
 
-import os
+import os, sys
 import argparse
 import subprocess
 
@@ -40,6 +40,8 @@ def cli_options():
   parser.add_argument('-H', '--provider', dest='provider', help='Action to be executed')
   parser.add_argument('-m', '--mountpoint', dest='mountpoint', help='Set mountpoint')
   parser.add_argument('-c', dest='config_file', help='Load configuration file')
+  parser.add_argument('-M', '--mount' , action='store_true', help='Mount spaces')
+  parser.add_argument('-U', '--umount', action='store_true', help='Umount space')
   return parser.parse_args()
 
 
@@ -57,22 +59,23 @@ def check_oneclient():
       raise
 
 #______________________________________
-def check_ini_file(fname):
+def check_file(fname):
   try:
-    with open(fname) as ftest:
-      ftest.close()
+    with open(fname) as f:
+      f.close()
       return True
   except IOError as e:
-     return False
+     print fdefault + ' not found.'
+     sys.exit()
 
 #______________________________________
-def check_configuration(fname):
-  par = read_ini_file(fname, 'refdata')
+def show_config(fname):
+  par = read_config(fname, 'refdata')
   if par:
     print par[0]
     print par[1]
     print par[2]
-  upar = read_ini_file(fname, 'userdata')
+  upar = read_config(fname, 'userdata')
   if upar:
     print upar[0]
     print upar[1]
@@ -80,7 +83,7 @@ def check_configuration(fname):
 
 
 #______________________________________
-def read_ini_file(fname, section):
+def read_config(fname, section):
   configParser = ConfigParser.RawConfigParser()
   configParser.readfp(open(fname))
   configParser.read(fname)
@@ -91,63 +94,53 @@ def read_ini_file(fname, section):
     params.append(configParser.get(section , 'mountpoint'))
   else:
     print 'Section [' + section + '] not enabled!'
-    return False
+    return
 
   if configParser.has_option(section, 'provider'):
     params.append(configParser.get(section , 'provider'))
   else:
-    print 'No provider specified. Check you configuration file: ' +_fail
+    print 'No provider specified for section [' + section + ']. Check you configuration file: ' +_fail
     return
 
   if configParser.has_option(section, 'token'):
     params.append(configParser.get(section , 'token'))
   else:
-    print 'No token specified. Check your configuration file:' + _fail
+    print 'No token specified for section [' + section + ']. Check your configuration file:' + _fail
     return
 
   return params
 
 
 #______________________________________
-def load_data(fname, section):
-  par = read_ini_file(fname, section)
-  connect(par[0], par[1], par[2])
+def mount_space(fname, section):
+  par = read_config(fname, section)
+  if par:
+    connect(par[1], par[2], par[0])
+  else:
+    return
 
 
 #______________________________________
-def connect(provider_hostname, access_token, mountpoint):
-  command = 'oneclient -H %s -t %s %s' % ( provider_hostname, access_token, mountpoint)
+def connect(provider, token, mountpoint):
+  command = 'oneclient -H %s -t %s %s' % ( provider, token, mountpoint)
   print command
   subprocess.call( command, shell=True )
 
 
 #______________________________________
-def load_from_file(fname, refdata, userdata):
-  if check_ini_file(fname):
-    if refdata: load_data(fname, 'REFDATA')
-    if userdata: load_data(fname, 'USERDATA')
-
-  elif check_ini_file(fdefault):
-    print 'Unable to find configuration file. Loading default options from' + fdefault
-    if refdata: load_data(fdefault, 'REFDATA')
-    if userdata: load_data(fdefault, 'USERDATA')
-
+def umount_space(fname, section):
+  par = read_config(fname, section)
+  if par:
+    umount_vol(par[0])
   else:
-    print 'Unable to load configuration file. Please check your configuration or load Onedata parameters manually!'
     return
+
 
 #______________________________________
-def load_config(fname, data):
-  if check_ini_file(fname):
-    load_data(fname, data)
-
-  elif check_ini_file(fdefault):
-    print 'Unable to find configuration file. Loading default options from' + fdefault
-    load_data(fdefault, data)
-
-  else:
-    print 'Unable to load configuration file. Please check your configuration or load Onedata parameters manually!'
-    return
+def umount_vol(mountpoint):
+  command = 'fusermount -u %s' % (mountpoint)
+  print command
+  subprocess.call( command, shell=True )
 
 
 #______________________________________
@@ -162,25 +155,29 @@ def onedatactl():
 
   check_oneclient()
 
-  check_configuration(options.config_file)
+  fileconfig=0
 
-  #---
-  # Reference data section
-#  if 
-#
-#  if options.config_file:
-#    load_from_file(options.config_file, options.refdata, options.userdata)
-#  else:
-#    if options.refdata: connect(options.provider, options.token, options.mountpoint)
-#    if options.userdata: connect(options.provider, options.token, options.mountpoint)
+  if options.config_file:
+    if check_file(options.config_file): fileconfig = options.config_file
+  else:
+    fileconfig = fdefault
 
+  if options.mount:
+    print fileconfig
+    check_file(fileconfig) # Check configuration file
+    if options.refdata: mount_space(fileconfig, 'refdata') # Mount reference data
+    elif options.userdata: mount_space(fileconfig, 'userdata') # Mount user data
+    else:
+      mount_space(fileconfig, 'refdata')
+      mount_space(fileconfig, 'userdata')
 
-#  # Mount volumes
-#  if options.config_file:
-#    load_from_file(options.config_file, options.refdata, options.userdata)
-#  else:
-#    if options.refdata: connect(options.provider, options.token, options.mountpoint)
-#    if options.userdata: connect(options.provider, options.token, options.mountpoint)
+  if options.umount:
+    if options.refdata:
+      umount_space(fileconfig, 'refdata')
+    elif options.userdata:
+      umount_space(fileconfig, 'userdata')
+    else:
+      print 'Volume not found.'
 
 
   # check if volume is mounted

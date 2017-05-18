@@ -1,7 +1,13 @@
 #!/usr/bin/python
+
 '''
-Author: Marco Tangaro
-mail: ma.tangaro@ibbe.cnr.it
+ELIXIR-ITALY
+INDIGO-DataCloud
+IBIOM-CNR
+
+Contributors:
+author: Tangaro Marco
+email: ma.tangaro@ibbe.cnr.it
 '''
 
 import os, sys

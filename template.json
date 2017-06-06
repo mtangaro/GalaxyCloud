@@ -1,0 +1,145 @@
+{
+  "version_of_portlet_description": 0.2,
+  "tabs": ["Virtual Hardware", "Storage options", "Galaxy Configuration", "Galaxy Advanced Configuration","Galaxy Tools"],
+  "parameters": [
+    {
+      "display": "Virtual CPUs Number",
+      "name": "number_cpus",
+      "type": "list",
+      "value": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ],
+      "tab": 0
+    },
+    {
+      "display": "Memory size (RAM)",
+      "name": "memory_size",
+      "type": "list",
+      "value": [
+        "1 GB",
+        "2 GB",
+        "4 GB",
+        "8 GB",
+        "16 GB",
+        "32 GB"
+      ],
+      "tab": 0
+    },
+    {
+      "display": "SSH public key",
+      "name": "instance_key_pub",
+      "type": "text",
+      "value": "Paste here your public key",
+      "tab": 0
+    },
+
+    {
+      "display": "Storage type",
+      "name": "galaxy_storage_type",
+      "type": "list",
+      "value": [
+        "IaaS",
+        "Onedata",
+        "Encryption"
+      ],
+      "tab": 1
+    },
+    { 
+      "display": "Volume storage size",
+      "name": "volume_storage",
+      "type": "list",
+      "value": [
+        "100 GB",
+        "1 TB"
+      ],
+      "tab": 1
+    },
+    {
+      "display": "OneProvider",
+      "name": "userdata_provider",
+      "type": "text",
+      "value": "indigo-wp3-onep.recas.ba.infn.it",
+      "tab": 1
+    },
+    {
+      "display": "Access Token",
+      "name": "userdata_token",
+      "type": "text",
+      "value": "Past here your token access",
+      "tab": 1
+    },
+    {
+      "display": "Access Token",
+      "name": "userdata_token",
+      "type": "text",
+      "value": "Past here your token access",
+      "tab": 1
+    },
+    {   
+      "display": "Onedata Space name",
+      "name": "userdata_space",
+      "type": "text",
+      "value": "galaxy",
+      "tab": 1
+    },
+    {
+      "display": "Galaxy version",
+      "name": "version",
+      "type": "list",
+      "value": [
+        "master",
+        "release_17.01"
+      ],
+      "tab": 2
+    },
+    {
+      "display": "Instance description (Galaxy brand)",
+      "name": "instance_description",
+      "type": "text",
+      "value": "ELIXIR-ITA Galaxy test",
+      "tab": 2
+    },
+    {
+      "display": "Galaxy administrator username",
+      "name": "user",
+      "type": "text",
+      "value": "admin username",
+      "tab": 2
+    },
+    {
+      "display": "Galaxy administrator mail address",
+      "name": "admin_email",
+      "type": "text",
+      "value": "admin mail address",
+      "tab": 2
+    },
+    {
+      "display": "Disable anonymous access (force everyone to log in)",
+      "name": "disable_anonymous_access",
+      "type": "list",
+      "value": [
+        "Yes",
+        "No"
+      ],
+      "tab": 3
+    },
+    {
+      "display": "Galaxy flavor",
+      "name": "galaxy_flavour",
+      "type": "list",
+      "value": [
+        "no-tools",
+        "NGS",
+        "TESTING",
+        "REVIEW"
+      ],
+      "tab": 4
+    }
+  ]
+}

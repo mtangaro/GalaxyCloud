@@ -1,0 +1,23 @@
+[Unit]
+Description=Galaxy production environment
+After=syslog.target
+After= network.target
+
+[Service]
+ExecStart=/home/galaxy/galaxy/.venv/bin/uwsgi --virtualenv /home/galaxy/galaxy/.venv --ini-paste /home/galaxy/galaxy/config/galaxy.ini
+WorkingDirectory=/home/galaxy/galaxy
+ExecReload=/home/galaxy/galaxy/.venv/bin/uwsgi --reload /var/log/galaxy/uwsgi.pid
+ExecStop=/home/galaxy/galaxy/.venv/bin/uwsgi --stop /var/log/galaxy/uwsgi.pid
+KillSignal=SIGINT
+KillMode=control-group
+StandardError=syslog
+NotifyAccess=all
+Type=notify
+User=galaxy
+Group=galaxy
+
+# Give a reasonable amount of time for the server to start up/shut down
+TimeoutSec=300
+
+[Install]
+WantedBy=multi-user.target

@@ -159,7 +159,7 @@ class UwsgiStatsServer:
       if workers_status == 1:
         return True
 
-    logging.error('No uWSGI workers accepting requests')
+    logging.debug('No uWSGI workers accepting requests')
     return False
 
   #______________________________________
@@ -189,5 +189,5 @@ class UwsgiStatsServer:
         if workers_status == 0:
           busy_list.append(workers_pid)
 
-      logging.info('Busy list: %s' % busy_list)
+      logging.debug('Busy list: %s' % busy_list)
       return busy_list

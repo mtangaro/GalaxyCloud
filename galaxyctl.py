@@ -33,8 +33,47 @@ def cli_options():
 
 #______________________________________
 # Galaxy startup: Wait galaxy to start and restart Galaxy 5 times before error.
-def startup_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300):
+def startup_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=600):
 
+  os.system('/usr/bin/supervisord -c /etc/supervisord.conf')
+  
+  # Wait supervisord start
+  time.sleep(10)
+
+  # Wait Galaxy Start
+  stats = UwsgiStatsServer(timeout=wait_time, fname=ini_file)
+  socket = stats.GetUwsgiStatsServer()
+  if socket is False:
+    print bcolors.status_fail
+    return
+  else:
+    socket.close()
+
+  # Wait workers accepting requests
+  time.sleep(5)
+
+  status = False
+  status = stats.CheckUwsgiWorkers(ini_file)
+
+  if status is True:
+    print bcolors.status_ok
+    return
+
+  # check workers 5 times before raise error
+  retries = 0
+  while status is False:
+    time.sleep(2)
+    status = stats.CheckUwsgiWorkers(ini_file)
+    retries += 1
+    if status is True:
+      print bcolors.status_ok
+      break
+    if retries == 5:
+      sys.exit('[Error] Start failed. Check log files!')
+      print bcolors.status_fail
+      break
+
+  # Force restart if all workers busy
   galaxy_startup_check(ini_file, wait_time)
 
 #______________________________________

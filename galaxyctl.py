@@ -40,7 +40,45 @@ def startup_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=6
   # Wait supervisord start
   time.sleep(10)
 
-  # Wait Galaxy Start
+  # Check uWSGI workers
+  galaxy_workers_check(ini_file, wait_time)
+
+  # Force restart if all workers busy
+  galaxy_startup_check(ini_file, wait_time)
+
+#______________________________________
+def stop_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini'):
+
+  stats = UwsgiStatsServer(timeout=5, fname=ini_file)
+  busy_list = stats.GetBusyList()
+
+  os.system('supervisorctl stop galaxy:')
+
+  if busy_list:
+    print busy_list
+    kill_command = 'kill -9 %s' % (' '.join( repr(e) for e in busy_list))
+    os.system(kill_command)
+
+  print bcolors.status_ok
+
+#______________________________________
+def start_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300, force_start=False):
+
+  os.system('supervisorctl start galaxy:')
+
+  # Wait Galaxy start
+  galaxy_workers_check(ini_file, wait_time)
+
+  # Try to restart Galaxy 5 times before error
+  if force_start is True:
+    galaxy_startup_check(ini_file, wait_time)
+
+#______________________________________
+# Check uWSGI workers 5 times before error
+
+def galaxy_workers_check(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300):
+
+  # Wait Galaxy start
   stats = UwsgiStatsServer(timeout=wait_time, fname=ini_file)
   socket = stats.GetUwsgiStatsServer()
   if socket is False:
@@ -73,69 +111,6 @@ def startup_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=6
       print bcolors.status_fail
       break
 
-  # Force restart if all workers busy
-  galaxy_startup_check(ini_file, wait_time)
-
-#______________________________________
-def stop_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini'):
-
-  stats = UwsgiStatsServer(timeout=5, fname=ini_file)
-  busy_list = stats.GetBusyList()
-
-  os.system('supervisorctl stop galaxy:')
-
-  if busy_list:
-    print busy_list
-    kill_command = 'kill -9 %s' % (' '.join( repr(e) for e in busy_list))
-    os.system(kill_command)
-
-  print bcolors.status_ok
-
-#______________________________________
-def start_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300):
-
-  os.system('supervisorctl start galaxy:')
-
-  # Wait Galaxy start
-  stats = UwsgiStatsServer(timeout=wait_time, fname=ini_file)
-  socket = stats.GetUwsgiStatsServer()
-  if socket is False:
-    print bcolors.status_fail
-    return
-  else:
-    socket.close()  
-
-  # Wait workers accepting requests
-  time.sleep(5)
-  
-  status = False
-  status = stats.CheckUwsgiWorkers(ini_file)
-
-  if status is True:
-    print bcolors.status_ok
-    return
-
-  # check workers 5 times before raise error
-  retries = 0
-  while status is False:
-    time.sleep(2)
-    status = stats.CheckUwsgiWorkers(ini_file)
-    retries += 1
-    if status is True:
-      print bcolors.status_ok
-      break
-    if retries == 5:
-      sys.exit('[Error] Start failed. Check log files!')
-      print bcolors.status_fail
-      break
-
-#______________________________________
-# Try to restart Galaxy 5 times before error
-def force_start_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300):
-
-  start_galaxy(ini_file, wait_time)
-  galaxy_startup_check(ini_file, wait_time)
-  
 #______________________________________
 def galaxy_startup_check(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300):
   
@@ -159,14 +134,14 @@ def galaxy_startup_check(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_
       break
 
 #______________________________________
-def restart_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300):
+def restart_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300, force_start=False):
   stop_galaxy(ini_file)
-  start_galaxy(ini_file, wait_time)
 
-#______________________________________
-def force_restart_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300):
-  stop_galaxy(ini_file)
-  force_start_galaxy(ini_file, wait_time)
+  # Try to restart Galaxy 5 times before error
+  if force_start is False:
+    start_galaxy(ini_file, wait_time)
+  else:
+    start_galaxy(ini_file, wait_time, True)
 
 #______________________________________
 def status_galaxy():
@@ -196,17 +171,11 @@ def galaxyctl():
 
   if sys.argv[1] == 'start' and sys.argv[2] == 'galaxy':
     print 'Starting Galaxy: '
-    if options.force is True:
-      force_start_galaxy( galaxy_config_file, options.timeout )
-    else:
-      start_galaxy( galaxy_config_file, options.timeout )
+    start_galaxy( galaxy_config_file, options.timeout, options.force )
 
   if sys.argv[1] == 'restart' and sys.argv[2] == 'galaxy':
     print 'Restarting Galaxy:'
-    if options.force is True:
-      force_restart_galaxy( galaxy_config_file, options.timeout )
-    else:
-      restart_galaxy( galaxy_config_file, options.timeout )
+    restart_galaxy( galaxy_config_file, options.timeout, options.force )
 
   if sys.argv[1] == 'status' and sys.argv[2] == 'galaxy':
     status_galaxy()

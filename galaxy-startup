@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Galaxy startup script
+#
+# ELIXIR-ITALY
+# INDIGO-DataCloud
+# IBIOM-CNR
+
+# Contributors:
+# author: Tangaro Marco
+# email: ma.tangaro@ibiom.cnr.it
+
+## Uncomment and edit this line to refer to galaxy's path:
+GALAXY='/home/galaxy/galaxy'
+GALAXYCTL='/usr/local/bin'
+#______________________________________
+# Load Galaxy environment
+
+echo "Loading Galaxy environment"
+cd ${GALAXY}
+. ${GALAXY}/.venv/bin/activate
+
+#______________________________________
+# Define start function
+# (supervisord or systemd/upstart)
+function start_galaxy {
+
+  echo "Starting the Galaxy production environment"
+  supervisord -c /etc/supervisord.conf
+
+  # wait supervisord start
+  sleep 10
+
+  # Check if galaxy is started and wait for uwsgi workers accepting requests.
+  echo "Galaxy is starting"
+  python $GALAXYCTL/galaxyctl.py galaxy-startup -c $GALAXY/config/galaxy.ini -t 300
+}
+
+#______________________________________
+# Start Galaxy production environment
+start_galaxy

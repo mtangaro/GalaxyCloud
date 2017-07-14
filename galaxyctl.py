@@ -23,7 +23,8 @@ galaxy_config_file = '/home/galaxy/galaxy/config/galaxy.ini'
 #______________________________________
 def cli_options():
   parser = argparse.ArgumentParser(description='Onedata connection script')
-  parser.add_argument('options', nargs='*', help='OPTIONS')
+  parser.add_argument('action', choices=['start','stop','restart','startup','status'], help='Action')
+  parser.add_argument('module', choices=['galaxy'], help='Module')
   parser.add_argument('-f', '--force', action='store_true', dest='force', default=False, help='Force Galaxy to start')
   parser.add_argument('-c', '--config-file', dest='config_file', help='uWSGI ini file')
   parser.add_argument('-s', '--server', dest='server', type=str, help='Server address')
@@ -162,23 +163,25 @@ def galaxyctl():
   if options.timeout is not None:
     options.timeout = float(options.timeout)
 
-  if sys.argv[1] == 'galaxy-startup':
-    startup_galaxy(galaxy_config_file, options.timeout)
+  if options.module == 'galaxy':
 
-  if sys.argv[1] == 'stop' and sys.argv[2] == 'galaxy':
-    print 'Stopping Galaxy: '
-    stop_galaxy(galaxy_config_file)
+    if options.action == 'startup':
+      startup_galaxy(galaxy_config_file, options.timeout)
 
-  if sys.argv[1] == 'start' and sys.argv[2] == 'galaxy':
-    print 'Starting Galaxy: '
-    start_galaxy( galaxy_config_file, options.timeout, options.force )
+    if options.action == 'stop':
+      print 'Stopping Galaxy: '
+      stop_galaxy(galaxy_config_file)
 
-  if sys.argv[1] == 'restart' and sys.argv[2] == 'galaxy':
-    print 'Restarting Galaxy:'
-    restart_galaxy( galaxy_config_file, options.timeout, options.force )
+    if options.action == 'start':
+      print 'Starting Galaxy: '
+      start_galaxy( galaxy_config_file, options.timeout, options.force )
 
-  if sys.argv[1] == 'status' and sys.argv[2] == 'galaxy':
-    status_galaxy()
+    if options.action == 'restart':
+      print 'Restarting Galaxy:'
+      restart_galaxy( galaxy_config_file, options.timeout, options.force )
+
+    if options.action == 'status':
+      status_galaxy()
 
 #______________________________________
 if __name__ == '__main__':

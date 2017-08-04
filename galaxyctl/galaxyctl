@@ -1,0 +1,281 @@
+#!/usr/bin/env python
+# ELIXIR-ITALY
+# INDIGO-DataCloud
+# IBIOM-CNR
+#
+# Contributors:
+# author: Tangaro Marco
+# email: ma.tangaro@ibiom.cnr.it
+
+# Imports
+import sys, os
+import time
+import argparse
+
+# Custom libraries
+from galaxyctl_libs import __version__
+from galaxyctl_libs import DetectGalaxyCommands
+from galaxyctl_libs import UwsgiStatsServer
+from galaxyctl_libs import bcolors
+from galaxyctl_libs import LUKSctl
+from galaxyctl_libs import OneDataCtl
+
+# Logging
+import logging
+logging.basicConfig(filename='/var/log/galaxy/galaxyctl.log', format='%(levelname)s %(asctime)s %(message)s', level=logging.DEBUG)
+
+# Init system
+# Supported: supervisord, init
+# supervisord ---> Current default, it is mandatory for docker container, since there's no systemd.
+# init ----------> CentOS 7 and Ubuntu 16.04 use systemd, Ubuntu 14.04 is using upstart.
+init_system = 'supervisord'
+
+# Supervisord config file:
+# centos: /etc/supervisord.conf
+# ubuntu: /etc/supervisor/supervisord.conf
+supervisord_conf_file = '/etc/supervisord.conf'
+
+# Config files
+galaxy_config_file = '/home/galaxy/galaxy/config/galaxy.ini'
+luks_config_file = '/etc/galaxy/luks-cryptdev.ini'
+luksctl_path = '/home/galaxy'
+onedatactl_config_file = '/etc/galaxy/onedatactl.ini'
+onedatactl_path = '/home/galaxy'
+
+#______________________________________
+def cli_options():
+  parser = argparse.ArgumentParser(description='Onedata connection script')
+  parser.add_argument('action', choices=['start','stop','restart','startup','status','open','close','mount','umount'], nargs='?', help='Action')
+  parser.add_argument('module', choices=['galaxy','luks','userdata','refdata'], nargs='?', help='Load module')
+  parser.add_argument('-f', '--force', action='store_true', dest='force', default=False, help='Force Galaxy to start')
+  parser.add_argument('-c', '--config-file', dest='config_file', help='uWSGI ini file')
+  parser.add_argument('-s', '--server', dest='server', type=str, help='Server address')
+  parser.add_argument('-p', '--port', dest='port', type=int, help='Server port')
+  parser.add_argument('-t', '--timeout', dest='timeout', default=300, help='Wait timeout')
+  parser.add_argument('-V', '--version', action='store_true', dest='version', default=False, help='Print galaxyctl_libs version')
+  return parser.parse_args()
+
+#______________________________________
+# Galaxy startup: Wait galaxy to start and restart Galaxy 5 times before error.
+def startup_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=600):
+
+  cmd = DetectGalaxyCommands(init_system)
+  logging.debug('[galaxyctl] %s' % cmd.get_startup_command())
+  os.system(cmd.get_startup_command())
+  
+  # Wait supervisord start
+  time.sleep(10)
+
+  # Check uWSGI workers
+  workers_check = galaxy_workers_check(ini_file, wait_time)
+
+  # Force restart if all workers busy
+  if workers_check is True:
+    print 'Galaxy start: ' + bcolors.status_ok
+    return
+  elif workers_check is False:
+    galaxy_startup_check(ini_file, wait_time)
+  else:
+    sys.exit('[Error] Start failed. Check log files!')
+
+#______________________________________
+def stop_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini'):
+
+  logging.debug('[galaxyctl] Stop Galaxy')
+
+  stats = UwsgiStatsServer(timeout=5, fname=ini_file)
+  busy_list = stats.GetBusyList()
+
+  cmd = DetectGalaxyCommands(init_system)
+  logging.debug('[galaxyctl] %s' % cmd.get_stop_command())
+  os.system(cmd.get_stop_command())
+
+  if busy_list:
+    print busy_list
+    kill_command = 'kill -9 %s' % (' '.join( repr(e) for e in busy_list))
+    os.system(kill_command)
+
+  print 'Galaxy stop: ' + bcolors.status_ok
+
+#______________________________________
+def start_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300, force_start=False):
+
+  logging.debug('[galaxyctl] Start Galaxy')
+
+  cmd = DetectGalaxyCommands(init_system)
+  logging.debug('[galaxyctl] %s' % cmd.get_start_command())
+  os.system(cmd.get_start_command())
+
+  # Wait Galaxy start
+  workers_check = galaxy_workers_check(ini_file, wait_time)
+
+  if workers_check is True:
+    print 'Galaxy start: ' + bcolors.status_ok
+    return
+  elif workers_check is False and force_start is True:
+    # Try to restart Galaxy 5 times before error
+    galaxy_startup_check(ini_file, wait_time)
+  else:
+    sys.exit('[Error] Start failed. Check log files!')
+
+#______________________________________
+# Check uWSGI workers 5 times before error
+
+def galaxy_workers_check(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300):
+
+  logging.debug('[galaxyctl] UWSGI workers check')
+
+  # Wait Galaxy start
+  stats = UwsgiStatsServer(timeout=wait_time, fname=ini_file)
+  socket = stats.GetUwsgiStatsServer()
+  if socket is False:
+    return False
+  else:
+    socket.close()
+
+  # Wait workers accepting requests
+  time.sleep(5)
+
+  status = False
+  status = stats.CheckUwsgiWorkers(ini_file)
+
+  if status is True:
+    return True
+
+  # check workers 5 times before raise error
+  retries = 0
+  while status is False:
+    logging.debug('[galaxyctl] UWSGI workers retry: %s' % str(retries))
+    time.sleep(2)
+    status = stats.CheckUwsgiWorkers(ini_file)
+    retries += 1
+    if status is True:
+      print bcolors.status_ok
+      return True
+    if retries == 5:
+      return False
+
+#______________________________________
+def galaxy_startup_check(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300):
+  
+  logging.debug('[galaxyctl] Galaxy workers check with forced restart if all workers busy.')
+
+  stats = UwsgiStatsServer(timeout=wait_time, fname=ini_file)
+  server = stats.GetUwsgiStatsServer()
+
+  status = False
+  retries = 0
+  status = stats.CheckUwsgiWorkers(ini_file)
+  while status is False:
+    time.sleep(5) # pause to let workers accept requests
+    logging.debug('[galaxyctl] Galaxy restart retry: %s' % str(retries))
+    restart_galaxy()
+    status = stats.CheckUwsgiWorkers(ini_file)
+    retries += 1
+    if status is True:
+      break
+    if retries == 5:
+      sys.exit('[Error] Start failed. Check log files!')
+
+#______________________________________
+def restart_galaxy(ini_file='/home/galaxy/galaxy/config/galaxy.ini', wait_time=300, force_start=False):
+  
+  logging.debug('[galaxyctl] Restart Galaxy')
+
+  stop_galaxy(ini_file)
+
+  # Try to restart Galaxy 5 times before error
+  if force_start is False:
+    start_galaxy(ini_file, wait_time)
+  else:
+    start_galaxy(ini_file, wait_time, True)
+
+#______________________________________
+def status_galaxy():
+  os.system('supervisorctl status galaxy:')
+
+#______________________________________
+def galaxyctl():
+
+  if not os.geteuid() == 0:
+    sys.exit('[Error] Script must be run as root.')
+
+  options = cli_options()
+
+  if options.version is True:
+    print('Galaxyctl library: ' + __version__)
+    return
+
+  # Replace galaxy_config_file if needed
+  if options.config_file:
+    global galaxy_config_file
+    galaxy_config_file = options.config_file
+
+  # Timeout needs to be float. We cast it here!
+  # We cannot declare it as float using argparse default type otherwise we loose the possibility to set it to None!
+  if options.timeout is not None:
+    options.timeout = float(options.timeout)
+
+  # galaxy module
+  if options.module == 'galaxy': 
+
+    if options.action == 'startup':
+      startup_galaxy(galaxy_config_file, options.timeout)
+
+    elif options.action == 'stop':
+      print 'Stopping Galaxy: '
+      stop_galaxy(galaxy_config_file)
+
+    elif options.action == 'start':
+      print 'Starting Galaxy: '
+      start_galaxy( galaxy_config_file, options.timeout, options.force )
+
+    elif options.action == 'restart':
+      print 'Restarting Galaxy:'
+      restart_galaxy( galaxy_config_file, options.timeout, options.force )
+
+    elif options.action == 'status':
+      status_galaxy()
+
+    else:
+      argparse.ArgumentParser().error("argument action: invalid choice (choose from 'start', 'stop', 'restart', 'startup', 'status')")
+
+  # luks module
+  if options.module == 'luks':
+
+    luksctl_script = '%s/luksctl' % luksctl_path
+    if os.path.isfile(luksctl_script) is not True:
+      raise Exception('No luksctl script in %s' % luksctl_path)
+
+    import imp 
+    os.chdir(luksctl_path)
+    luksctl = imp.load_source('luksctl', 'luksctl')
+ 
+    luks = LUKSctl(luks_config_file)
+    
+    if options.action == "status": luksctl.display_dmsetup_info(luks.get_cryptdev())
+    elif options.action == "open": luksctl.luksopen_device(luks.get_uuid(), luks.get_cryptdev(), luks.get_mountpoint())
+    elif options.action == "close": luksctl.luksclose_device(luks.get_mountpoint(), luks.get_cryptdev())
+    else: argparse.ArgumentParser().error("argument action: invalid choice (choose from 'status', 'open', 'close')")
+
+  # onedatactl module
+  if options.module == 'userdata' or options.module == 'refdata':
+
+    onedatactl_script = '%s/onedatactl' % onedatactl_path
+    if os.path.isfile(onedatactl_script) is not True:
+      raise Exception('No onedatactl script in %s' % luksctl_path)
+
+    import imp
+    os.chdir(onedatactl_path)
+    onedatactl = imp.load_source('onedatactl', 'onedatactl')
+
+    onedata = OneDataCtl(onedatactl_config_file, options.module)
+
+    if options.action == 'status': onedatactl.check_mountpoint(options.module, onedata.get_mountpoint())
+    elif options.action == 'mount': onedata.mount_space()
+    elif options.action == 'umount': onedata.umount_space()
+    else: argparse.ArgumentParser().error("argument action: invalid choice (choose from 'status', 'mount', 'umount')")
+
+#______________________________________
+if __name__ == '__main__':
+  galaxyctl()

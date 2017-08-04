@@ -80,6 +80,14 @@ class DetectGalaxyCommands:
       if self.os == 'ubuntu' and self.codename == 'trusty': return 'service galaxy start'
 
   #______________________________________
+  def get_status_command(self):
+    if self.init == 'supervisord': return 'supervisorctl status galaxy:'
+    elif self.init == 'init':
+      if self.os == 'centos': return 'systemctl status galaxy.service'
+      if self.os == 'ubuntu' and self.codename == 'xenial': return 'systemctl status galaxy.service'
+      if self.os == 'ubuntu' and self.codename == 'trusty': return 'service galaxy status'
+
+  #______________________________________
   def get_init(self): return self.init
   def get_os(self): return self.os
   def get_version(self): return self.version

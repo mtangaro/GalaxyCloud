@@ -75,7 +75,7 @@ def luksopen_device(uuid, cryptdev, mountpoint):
   stdout, stderr, status = exec_command(cmd_mount)
 
   if str(status) == '0':
-    cmd_ownership = 'chown galaxyy:galaxy %s' % mountpoint
+    cmd_ownership = 'chown galaxy:galaxy %s' % mountpoint
     os.system(cmd_ownership)
     display_dmsetup_info(cryptdev)
   else:

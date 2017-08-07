@@ -251,7 +251,7 @@ class UwsgiStatsServer:
 ####################################
 # This class reads luksctl config file
 
-class LUKSctl:
+class LUKSCtl:
   def __init__(self, fname):
 
     self.fname = fname

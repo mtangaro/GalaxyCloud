@@ -101,6 +101,48 @@ class DetectGalaxyCommands:
 
 ####################################
 
+class UwsgiSocket:
+  def __init__(self, server=None, port=None, timeout=None, fname=None):
+    self.server = server
+    self.port = port
+    self.timeout = timeout
+
+    if fname is not None:
+      self.fname = fname
+
+      configParser = ConfigParser.RawConfigParser()
+      configParser.readfp(open(fname))
+      configParser.read(fname)
+
+      section = 'uwsgi'
+      option = 'socket'
+
+      if configParser.has_option(section, option):
+        self.par = configParser.get(section , option)
+        self.server = self.par.split(':')[0]
+        self.port = int(self.par.split(':')[1])
+      else:
+        raise Exception('No [uwsgi] section in %s' % fname)
+
+  #______________________________________
+  def get_server(self): return self.server
+  def get_port(self): return self.port
+
+  #______________________________________
+  def set_server(self, server): self.server = server
+  def set_port(self, port): self.port = port
+
+  #______________________________________
+  def get_uwsgi_master_pid(self):
+    command = 'lsof -t -i :%s' % self.port
+    proc = subprocess.Popen( args=command, shell=True,  stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+    communicateRes = proc.communicate()
+    stdOutValue, stdErrValue = communicateRes
+    status = proc.wait()
+    return stdOutValue, stdErrValue, status
+
+####################################
+
 class UwsgiStatsServer:
   def __init__(self, server=None, port=None, timeout=None, fname=None):
     self.server = server

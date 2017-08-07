@@ -21,7 +21,7 @@ except ImportError:
 from galaxyctl_libs import __version__
 from galaxyctl_libs import UwsgiStatsServer
 from galaxyctl_libs import bcolors
-from galaxyctl_libs import LUKSctl
+from galaxyctl_libs import LUKSCtl
 
 # Log config
 import logging
@@ -109,7 +109,7 @@ def luksctl():
     return
 
   # Read luks ini file variables
-  luks = LUKSctl(luks_config_file)
+  luks = LUKSCtl(luks_config_file)
 
   if options.action == "status":
     display_dmsetup_info(luks.get_cryptdev())

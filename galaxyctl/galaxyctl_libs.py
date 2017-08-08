@@ -6,6 +6,10 @@
 # Contributors:
 # author: Tangaro Marco
 # email: ma.tangaro@ibiom.cnr.it
+#
+# Dependencies:
+# uwsgi
+# lsof
 
 __version__ = "0.0.1"
 

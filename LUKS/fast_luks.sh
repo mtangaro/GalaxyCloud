@@ -446,7 +446,7 @@ if [ "${HELP}" = "YES" ]
            -f, --filesystem		\tset filesystem [default: ext4]\n
            --default			\t\tload default values\n"
     echo -e $usage
-    exit 1
+    exit
 fi
 
 # Check if the required applications are installed

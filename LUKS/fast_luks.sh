@@ -431,7 +431,22 @@ fi
 # Print Help
 if [ "${HELP}" = "YES" ]
   then
-    echo -e "Print help."
+    echo ""
+    usage="$(basename "$0"): a bash script to automate LUKS file system encryption.\n
+           usage: fast-luks [-h]\n
+           \n
+           optionals argumets:\n
+           -h, --help			\t\tshow this help text\n
+           -c, --cipher			\t\tset cipher algorithm [default: aes-xts-plain64]\n
+           -k, --keysize		\t\tset key size [default: 256]\n
+           -a, --hash_algorithm		\tset hash algorithm used for key derivation\n
+           -d, --device			\t\tset device [default: /dev/vdb]\n
+           -e, --cryptdev		\tset crypt device [default: cryptdev]\n
+           -m, --mountpoint		\tset mount point [default: /export]\n
+           -f, --filesystem		\tset filesystem [default: ext4]\n
+           --default			\t\tload default values\n"
+    echo -e $usage
+    exit 1
 fi
 
 # Check if the required applications are installed

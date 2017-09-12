@@ -1,0 +1,110 @@
+{
+  "version_of_portlet_description": 0.2,
+  "tabs": [
+      "Virtual Hardware",
+      "Storage",
+      "Galaxy Configuration",
+      "Galaxy Tools"
+  ],
+  "parameters": [
+    {
+      "display": "Virtual CPUs Number",
+      "name": "number_cpus",
+      "type": "list",
+      "value": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ],
+      "tab": 0
+    },
+    {
+      "display": "Memory size (RAM)",
+      "name": "memory_size",
+      "type": "list",
+      "value": [
+        "1 GB",
+        "2 GB",
+        "4 GB",
+        "8 GB",
+        "16 GB",
+        "32 GB"
+      ],
+      "tab": 0
+    },
+    {
+      "display": "SSH public key",
+      "name": "instance_key_pub",
+      "type": "text",
+      "value": "Paste here your public key",
+      "tab": 0
+    },
+
+    {
+      "display": "Storage type",
+      "name": "galaxy_storage_type",
+      "type": "list",
+      "value": [
+        "IaaS",
+        "Encryption"
+      ],
+      "tab": 1
+    },
+    { 
+      "display": "Volume storage size",
+      "name": "volume_storage",
+      "type": "list",
+      "value": [
+        "20 GB",
+        "50 GB",
+        "100 GB",
+        "200 GB",
+        "500 GB",
+        "1 TB"
+      ],
+      "tab": 1
+    },
+    {
+      "display": "Galaxy version",
+      "name": "version",
+      "type": "list",
+      "value": [
+        "release_17.05",
+        "release_17.01",
+        "master"
+      ],
+      "tab": 2
+    },
+    {
+      "display": "Instance description (Galaxy brand)",
+      "name": "instance_description",
+      "type": "text",
+      "value": "ELIXIR-ITA Galaxy test",
+      "tab": 2
+    },
+    {
+      "display": "Galaxy administrator mail address",
+      "name": "admin_email",
+      "type": "text",
+      "value": "admin mail address",
+      "tab": 2
+    },
+    {
+      "display": "Galaxy flavors",
+      "name": "flavor",
+      "type": "list",
+      "value": [
+        "No tools",
+        "NGS",
+        "RNA-seq",
+        "TESTING",
+        "REVIEW"
+      ],
+      "tab": 3
+    }
+  ]
+}

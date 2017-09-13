@@ -1,0 +1,61 @@
+Galaxy_onedata
+Galaxy with onedata exploits galaxy_elixirIT.yaml recipe. Currently an external volume is needed due to a nginx/onedata incompatibility (to be fixed).
+Ubuntu is used by default, since current onedata implementation have many problems with centos (already reported).
+
+Tosca template: https://github.com/indigo-dc/tosca-templates/blob/master/galaxy_onedata_elixirIT.yaml
+json: https://github.com/mtangaro/GalaxyCloud/blob/master/FGW_json/galaxy_onedata.json
+
+Virtual hardware tab:
+ - Virtual CPUs Number (leave as it is)
+ - Memory size (RAM)   (leave as it is)
+ - SSH Public key      (leave as it is)
+
+Storage tab:
+
+- Oneprovider:
+    tosca var: userdata_provider:
+    description: oneprovider for user data.
+    value: currently two possible values: indigo-wp3-onep.recas.ba.infn.it and oneprovider2.cloud.ba.infn.it
+
+- Access token:
+    tosca var: userdata_token
+    description: Onedata access token
+    value: "paste here your access token"
+
+- Onedata space name:
+    tosca var: userdata_space
+    description: Ondata space name, Should be max 8 characters, due to current galaxy limitations
+    value: "Paste here your space name (maximum 8 characters)
+
+Galaxy configuration tab
+- Galaxy version:
+    tosca var: version
+    value: currently two values release_17.01 (default) and master
+- Instance description (as it is)
+- Galaxy administrator mail address (as it is)
+
+Galaxy advanced configuration tab:
+- Disable anonymous access: Currently not linked to a tosca var. Please leave it here. I will fix.
+
+Galaxy tools:
+- Galaxy flavors:
+    tosca_var: flavor
+    values: No tools -> tosca value: "galaxy-no-tools"
+            NGS ------> tosca value: "galaxy-NGS"
+            TESTING --> tosca value: "galaxy-TESTING"
+            REVIEW ---> tosca value: "galaxy-REVIEW"
+            
+Other variables:
+- To instantiate galaxy with onedata support the "os_storage" variable in galaxy_elixirIT.yaml template has to be set to "onedata":
+os_storage: 'onedata'
+
+- storage_size: we keep it at 10GB for testing. We hope to remove the storage section from the template.
+
+- The reference data section is always the same:
+- reference_data: true  
+- refdata_dir: /refdata
+- refdata_repository_name: "elixir-italy.galaxy.refdata"
+- refdata_provider_type: "cvmfs"
+- refdata_cvmfs_server_url: "90.147.102.186"
+- refdata_cvmfs_repository_name: "elixir-italy.galaxy.refdata"
+- refdata_cvmfs_key_file: "elixir-italy.galaxy.refdata.pub"

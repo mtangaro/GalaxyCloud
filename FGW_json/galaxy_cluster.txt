@@ -1,0 +1,46 @@
+Galaxy cluster:
+please note that "export_dir" and "refdata_dir" needs to be set to:
+export_dir: /home/export
+refdata_dir: /home/refdata
+otherwise we can't have data on the shared filesystem.
+
+Tosca Template: https://github.com/indigo-dc/tosca-templates/blob/master/galaxy_elastic_cluster_elixirIT.yaml
+Json: https://github.com/mtangaro/GalaxyCloud/blob/master/FGW_json/galaxy_cluster.json
+
+Virtual hardware tab:
+ - Virtual CPUs Number (leave as it is)
+ - Memory size (RAM)   (leave as it is)
+ - SSH Public key      (leave as it is)
+
+Storage tab:
+- Volume storage size:
+    different values from 20 GB to 1 TB.
+
+Galaxy configuration tab
+- Galaxy version:
+    tosca var: version
+    value: currently two values release_17.05 (default), release_17.01 and master
+- Instance description (as it is)
+- Galaxy administrator mail address (as it is)
+
+Galaxy advanced configuration tab has been removed!
+
+Galaxy tools:
+- Galaxy flavors:
+    tosca_var: flavor
+    values: No tools -> tosca value: "galaxy-no-tools"
+            NGS ------> tosca value: "galaxy-NGS"
+            RNA-seq --> tosca value: "galaxy-RNAseq"
+            TESTING --> tosca value: "galaxy-TESTING"
+            REVIEW ---> tosca value: "galaxy-REVIEW"
+
+
+Moreover we have in the tosca template a set of variable to correctly configure Galaxy Reference data. We currently support three way (onedata, cvmfs, download). We don't want the user to configure them. It will be up to the service provider to choose which one is the best way to provide them.
+Current default configuration is through the CernVM-FS server (cvmfs):
+- reference_data: true  
+- refdata_dir: /home/refdata
+- refdata_repository_name: "elixir-italy.galaxy.refdata"
+- refdata_provider_type: "cvmfs"
+- refdata_cvmfs_server_url: "90.147.102.186"
+- refdata_cvmfs_repository_name: "elixir-italy.galaxy.refdata"
+- refdata_cvmfs_key_file: "elixir-italy.galaxy.refdata.pub"

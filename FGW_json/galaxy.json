@@ -56,7 +56,7 @@
     },
     { 
       "display": "Volume storage size",
-      "name": "volume_storage",
+      "name": "storage_size",
       "type": "list",
       "value": [
         "20 GB",

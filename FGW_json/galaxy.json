@@ -90,7 +90,7 @@
       "display": "Galaxy administrator mail address",
       "name": "admin_email",
       "type": "text",
-      "value": "admin mail address",
+      "value": "admin@elixir-italy.org",
       "tab": 2
     },
     {
@@ -98,11 +98,11 @@
       "name": "flavor",
       "type": "list",
       "value": [
-        "No tools",
-        "NGS",
-        "RNA-seq",
-        "TESTING",
-        "REVIEW"
+        "galaxy-no-tools",
+        "galaxy-NGS",
+        "galaxy-RNAseq",
+        "galaxy-TESTING",
+        "galaxy-REVIEW"
       ],
       "tab": 3
     }

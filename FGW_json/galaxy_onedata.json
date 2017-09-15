@@ -60,6 +60,7 @@
       "name": "userdata_space",
       "type": "text",
       "value": "Paste here your space name (maximum 8 characters)",
+      "maxlength": 8,
       "tab": 1
     },
     {

@@ -69,8 +69,13 @@
       "tab": 1
     },
     {
-      "display": "Current Galaxy version: 17.05",
-      "tab": 2
+      "display": "Galaxy version",
+      "name": "version",
+      "type": "list",
+      "value": [
+        "release_17.05"
+      ],
+      "tab", 2
     },
     {
       "display": "Instance description (Galaxy brand)",

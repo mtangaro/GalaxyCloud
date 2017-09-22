@@ -52,7 +52,7 @@
       "display": "Access Token",
       "name": "userdata_token",
       "type": "text",
-      "value": "Past here your token access",
+      "value": "Past here your access token",
       "tab": 1
     },
     {   

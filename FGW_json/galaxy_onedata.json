@@ -64,7 +64,7 @@
       "tab": 1
     },
     { 
-      "display": "Volume storage size (file upload and job working directory)",
+      "display": "Volume storage size (external volume for file upload and job working directory)",
       "name": "storage_size",
       "type": "list",
       "value": [

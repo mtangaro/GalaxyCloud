@@ -63,6 +63,19 @@
       "maxlength": 8,
       "tab": 1
     },
+    { 
+      "display": "Volume storage size (file upload and job working directory)",
+      "name": "storage_size",
+      "type": "list",
+      "value": [
+        "20 GB",
+        "50 GB",
+        "100 GB",
+        "200 GB",
+        "500 GB"
+      ],
+      "tab": 1
+    },
     {
       "display": "Galaxy version",
       "name": "version",

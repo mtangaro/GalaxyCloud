@@ -1,6 +1,6 @@
 {
   "version_of_portlet_description": 0.2,
-  "tabs": ["Virtual Hardware", "Storage", "Galaxy Configuration", "Galaxy Tools"],
+  "tabs": ["Virtual Hardware", "Onedata space", "Galaxy Configuration", "Galaxy Tools"],
   "parameters": [
     {
       "display": "Virtual CPUs Number",

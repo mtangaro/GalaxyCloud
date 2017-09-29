@@ -1,11 +1,31 @@
-{
-  "version_of_portlet_description": 0.2,
-  "tabs": ["Virtual Hardware", "Storage", "Galaxy Configuration","Galaxy Tools"],
+on_of_portlet_description": 0.2,
+  "tabs": [
+    "Virtual Hardware",
+    "Storage",
+    "Galaxy Configuration",
+    "Galaxy Tools"
+  ],
   "parameters": [
     {
-      "display": "Virtual CPUs Number",
-      "name": "number_cpus",
+      "tab": 0,
+      "value": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
       "type": "list",
+      "name": "wn_num",
+      "display": "Maximum number of WNs in the elastic cluster"
+    },
+    {
+      "tab": 0,
       "value": [
         1,
         2,
@@ -15,12 +35,12 @@
         32,
         64
       ],
-      "tab": 0
+      "type": "list",
+      "name": "fe_cpus",
+      "display": "Numer of CPUs for the front-end node"
     },
     {
-      "display": "Memory size (RAM)",
-      "name": "memory_size",
-      "type": "list",
+      "tab": 0,
       "value": [
         "1 GB",
         "2 GB",
@@ -29,19 +49,48 @@
         "16 GB",
         "32 GB"
       ],
-      "tab": 0
-    },
-    {
-      "display": "SSH public key",
-      "name": "instance_key_pub",
-      "type": "text",
-      "value": "Paste here your public key",
-      "tab": 0
-    },
-    {
-      "display": "Volume storage size",
-      "name": "volume_storage",
       "type": "list",
+      "name": "fe_mem",
+      "display": "Amount of Memory for the front-end node"
+    },
+    {
+      "tab": 0,
+      "value": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        64
+      ],
+      "type": "list",
+      "name": "wn_cpus",
+      "display": "Numer of CPUs for the WNs"
+    },
+    {
+      "tab": 0,
+      "value": [
+        "1 GB",
+        "2 GB",
+        "4 GB",
+        "8 GB",
+        "16 GB",
+        "32 GB"
+      ],
+      "type": "list",
+      "name": "wn_mem",
+      "display": "Amount of Memory for the WNs"
+    },
+    {
+      "tab": 0,
+      "value": "Paste here your public key",
+      "type": "text",
+      "name": "instance_key_pub",
+      "display": "SSH public key"
+    },
+    {
+      "tab": 1,
       "value": [
         "20 GB",
         "50 GB",
@@ -50,45 +99,47 @@
         "500 GB",
         "1 TB"
       ],
-      "tab": 1
+      "type": "list",
+      "name": "volume_storage",
+      "display": "Volume storage size"
     },
     {
-      "display": "Galaxy version",
-      "name": "version",
-      "type": "list",
+      "tab": 2,
       "value": [
         "release_17.05",
         "release_17.01",
         "master"
       ],
-      "tab": 2
-    },
-    {
-      "display": "Instance description (Galaxy brand)",
-      "name": "instance_description",
-      "type": "text",
-      "value": "ELIXIR-ITA Galaxy test",
-      "tab": 2
-    },
-    {
-      "display": "Galaxy administrator mail address",
-      "name": "admin_email",
-      "type": "text",
-      "value": "admin mail address",
-      "tab": 2
-    },
-    {
-      "display": "Galaxy flavor",
-      "name": "galaxy_flavour",
       "type": "list",
+      "name": "version",
+      "display": "Galaxy version"
+    },
+    {
+      "tab": 2,
+      "value": "ELIXIR-ITA Galaxy test",
+      "type": "text",
+      "name": "instance_description",
+      "display": "Instance description (Galaxy brand)"
+    },
+    {
+      "tab": 2,
+      "value": "admin mail address",
+      "type": "text",
+      "name": "admin_email",
+      "display": "Galaxy administrator mail address"
+    },
+    {
+      "tab": 3,
       "value": [
-        "No tools",
-        "NGS",
-        "RNA-seq",
-        "TESTING",
-        "REVIEW"
+        "galaxy-no-tools",
+        "galaxy-NGS",
+        "galaxy-RNAseq",
+        "galaxy-TESTING",
+        "galaxy-REVIEW"
       ],
-      "tab": 3
+      "type": "list",
+      "name": "galaxy_flavour",
+      "display": "Galaxy flavor"
     }
   ]
 }

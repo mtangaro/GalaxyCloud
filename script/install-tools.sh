@@ -13,7 +13,9 @@
 
 GALAXY='/home/galaxy/galaxy'
 GALAXY_USER='galaxy'
-install_log='/var/log/galaxy/galaxy_tools_install.log'
+#---
+now=$(date +"%b-%d-%y-%H%M%S")
+install_log="/var/log/galaxy/galaxy_tools_install_$now.log"
 install_pidfile='/var/log/galaxy/galaxy_tools_install.pid'
 
 #________________________________
@@ -56,9 +58,42 @@ function check_postgresql {
 }
 
 #________________________________
+# Install lsof
+
+function install_lsof {
+  if [[ -r /etc/os-release ]]; then
+    . /etc/os-release
+    echo $ID
+    if [ "$ID" = "ubuntu" ]; then
+      echo "[Ubuntu] Installing lsof with apt."
+      apt-get install -y lsof
+    elif [ "$ID" = "centos" ]; then
+      echo "[EL] Installing lsof with yum."
+      yum install -y lsof
+    fi
+  else
+    echo "Not running a distribution with /etc/os-release available."
+  fi
+}
+
+function check_lsof {
+  type -P lsof &>/dev/null || { echo "lsof is not installed. Installing.."; install_lsof; }
+}
+
+#________________________________
+function install_ephemeris {
+  echo "Load clean virtual environment"
+  virtualenv /tmp/tools_venv
+  source /tmp/tools_venv/bin/activate
+  echo "Install ephemeris using pip in the clean environment"
+  pip install ephemeris
+}
+
+#________________________________
 # clean logs
-#rm $install_log
-#rm $install_pidfile
+echo "Clean logs"
+rm $install_log
+rm $install_pidfile
 
 # ensure Galaxy is not running through supervisord
 if pgrep "supervisord" > /dev/null
@@ -67,7 +102,11 @@ then
     supervisorctl stop galaxy:
 fi
 
-# ensure no install-tools running instance
+# ensure galaxy is not running on run.sh and 8080 port
+check_lsof
+echo "Kill run.sh Galaxy instance listening on 8080 port"
+kill -9 $(lsof -t -i :8080)
+# install lsof to be sure
 
 # check PostgreSQL
 check_postgresql
@@ -103,7 +142,9 @@ while : ; do
 done
 
 # install tools
-shed-install -g "http://localhost:$PORT" -a GALAXY_ADMIN_API_KEY -t "$1"
+install_ephemeris
+
+shed-install -g "http://localhost:$PORT" -a not_very_secret_api_key -t "$1" # {{ GALAXY_ADMIN_API_KEY }}
 
 exit_code=$?
 

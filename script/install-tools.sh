@@ -70,13 +70,6 @@ fi
 # check PostgreSQL
 check_postgresql
 
-# stop nginx allowing to connect on port 80
-echo "[VM] Stop NGINX. Freeing port 80."
-nginx -s stop
-
-#echo "[Docker] Start NGINX"
-#supervisorctl stop nginx
-
 # create log file
 sudo -E -u $GALAXY_USER touch $install_log
  

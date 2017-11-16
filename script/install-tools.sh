@@ -67,6 +67,8 @@ then
     supervisorctl stop galaxy:
 fi
 
+# ensure no install-tools running instance
+
 # check PostgreSQL
 check_postgresql
 

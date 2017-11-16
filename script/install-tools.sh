@@ -11,6 +11,8 @@
 # Script based on install_tools_wrapper from B. Gruening and adpted to our ansible roles.
 # https://raw.githubusercontent.com/bgruening/docker-galaxy-stable/master/galaxy/install_tools_wrapper.sh
 
+# Usage: install-tools GALAXY_ADMIN_API_KEY tool-list.yml
+
 GALAXY='/home/galaxy/galaxy'
 GALAXY_USER='galaxy'
 #---
@@ -144,7 +146,7 @@ done
 # install tools
 install_ephemeris
 
-shed-install -g "http://localhost:$PORT" -a not_very_secret_api_key -t "$1" # {{ GALAXY_ADMIN_API_KEY }}
+shed-install -g "http://localhost:$PORT" -a $1 -t "$2"
 
 exit_code=$?
 

@@ -7,7 +7,6 @@
       galaxy_flavor: 'galaxy-TESTING'
       move_datasets: false
       create_bootstrap_user: true
-      galaxy_admin_api_key: 'djdhKDHDFDkodhflxODJLkklc'
       when: galaxy_flavor != 'galaxy-no-tools'
 
     - role: indigo-dc.galaxycloud-tooldeps

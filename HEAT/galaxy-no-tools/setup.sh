@@ -33,7 +33,7 @@ if [ "$DISTNAME" = "ubuntu" ]; then
   apt-get autoremove -y
   #install ansible 2.2.1 (version used in INDIGO)
   apt-get -y update &>> $LOGFILE
-  apt-get install -y python-dev libffi-dev libssl-dev &>> $LOGFILE #https://github.com/geerlingguy/JJG-Ansible-Windows/issues/28
+  apt-get install -y python-pip python-dev libffi-dev libssl-dev &>> $LOGFILE #https://github.com/geerlingguy/JJG-Ansible-Windows/issues/28
   apt-get -y install git vim python-pycurl wget &>> $LOGFILE
 else
   echo "Distribution: CentOS. Using yum" >> $LOGFILE

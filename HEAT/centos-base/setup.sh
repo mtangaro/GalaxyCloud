@@ -29,14 +29,14 @@ fi
 if [ "$DISTNAME" = "ubuntu" ]; then
   echo "Distribution: Ubuntu. Using apt" >> $LOGFILE
   apt-get -y update &>> $LOGFILE
-  apt-get install -y python-dev libffi-dev libssl-dev &>> $LOGFILE
+  apt-get install -y python-pip python-dev libffi-dev libssl-dev &>> $LOGFILE
   apt-get -y install git vim python-pycurl wget &>> $LOGFILE
 else
   echo "Distribution: CentOS. Using yum" >> $LOGFILE
   yum install -y epel-release &>> $LOGFILE
   yum update -y &>> $LOGFILE
   yum groupinstall -y "Development Tools" &>> $LOGFILE
-  yum install -y python-devel libffi-devel openssl-devel &>> $LOGFILE
+  yum install -y python-pip python-devel libffi-devel openssl-devel &>> $LOGFILE
   yum install -y  git vim python-curl wget  &>> $LOGFILE
 fi
 

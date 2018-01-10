@@ -142,6 +142,7 @@ topology_template:
       properties:
         flavor: { get_input: flavor }
         admin_api_key: { get_input: admin_api_key }
+        version: { get_input: version }
       requirements:
         - host: galaxy
 
@@ -191,10 +192,7 @@ topology_template:
         # Guest Operating System properties
         os:
           properties:
-            type: linux 
-            distribution: centos
-            version: 7.2
-            image: indigodatacloudapps/galaxy
+            image: centos-7-1708-vmi
       requirements:
         # contextually this can only be a relationship type
         - local_storage:

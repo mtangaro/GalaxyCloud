@@ -6,7 +6,6 @@ echo "Start log ${now}" > $LOGFILE
 
 #________________________________
 # Get Distribution
-
 DISTNAME=''
 if [[ -r /etc/os-release ]]; then
     . /etc/os-release
@@ -33,32 +32,38 @@ if [ "$DISTNAME" = "ubuntu" ]; then
   apt-get autoremove -y
   #install ansible 2.2.1 (version used in INDIGO)
   apt-get -y update &>> $LOGFILE
-  apt-get install -y python-pip python-dev libffi-dev libssl-dev &>> $LOGFILE #https://github.com/geerlingguy/JJG-Ansible-Windows/issues/28
+  apt-get install -y python-pip python-dev libffi-dev libssl-dev python-virtualenv &>> $LOGFILE #https://github.com/geerlingguy/JJG-Ansible-Windows/issues/28
   apt-get -y install git vim python-pycurl wget &>> $LOGFILE
 else
   echo "Distribution: CentOS. Using yum" >> $LOGFILE
   yum install -y epel-release &>> $LOGFILE
   yum update -y &>> $LOGFILE
   yum groupinstall -y "Development Tools" &>> $LOGFILE
-  yum install -y python-pip python-devel libffi-devel openssl-devel &>> $LOGFILE
+  yum install -y python-pip python-devel libffi-devel openssl-devel python-virtualenv &>> $LOGFILE
   yum install -y git vim wget  &>> $LOGFILE
 fi
 
+# Install ansible in a specific virtual environment
+ansible_venv=/tmp/myansible
+virtualenv --system-site-packages  $ansible_venv &>> $LOGFILE
+. $ansible_venv/bin/activate &>> $LOGFILE
+pip install pip --upgrade &>> $LOGFILE
 pip install ansible==2.2.1 &>> $LOGFILE
 
-# workaround for template module error on Ubuntu 14.04 https://github.com/ansible/ansible/issues/13818
-sed -i 's\^#remote_tmp     = ~/.ansible/tmp.*$\remote_tmp     = $HOME/.ansible/tmp\' /etc/ansible/ansible.cfg
-sed -i 's\^#local_tmp      = ~/.ansible/tmp.*$\local_tmp      = $HOME/.ansible/tmp\' /etc/ansible/ansible.cfg
+# fix selinux in virutalenv
+#cp -r /usr/lib64/python2.7/site-packages/selinux /tmp/ansible_venv/lib64/python2.7/site-packages/
 
-# Enable ansible log file
-sed -i 's\^#log_path = /var/log/ansible.log.*$\log_path = /var/log/ansible.log\' /etc/ansible/ansible.cfg
+# workaround for template module error on Ubuntu 14.04 https://github.com/ansible/ansible/issues/13818
+#sed -i 's\^#remote_tmp     = ~/.ansible/tmp.*$\remote_tmp     = $HOME/.ansible/tmp\' /etc/ansible/ansible.cfg
+#sed -i 's\^#local_tmp      = ~/.ansible/tmp.*$\local_tmp      = $HOME/.ansible/tmp\' /etc/ansible/ansible.cfg
 
 # Install role
-BRANCH="master"
-git clone https://github.com/indigo-dc/ansible-role-galaxycloud.git /etc/ansible/roles/indigo-dc.galaxycloud &>> $LOGFILE
-cd /etc/ansible/roles/indigo-dc.galaxycloud && git checkout $BRANCH &>> $LOGFILE
+role_dir=/tmp/roles
+BRANCH="devel"
+git clone https://github.com/indigo-dc/ansible-role-galaxycloud.git $role_dir/indigo-dc.galaxycloud &>> $LOGFILE
+cd $role_dir/indigo-dc.galaxycloud && git checkout $BRANCH &>> $LOGFILE
 
-# Run role
+# Download playbook and run role
 wget https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/galaxy-no-tools/playbook.yml -O /tmp/playbook.yml &>> $LOGFILE
 ansible-playbook /tmp/playbook.yml &>> $LOGFILE
 
@@ -114,24 +119,15 @@ systemctl disable proftpd &>> $LOGFILE
 
 #________________________________
 # Remove ansible
-echo 'Removing ansible' &>> $LOGFILE
-if [ "$DISTNAME" = "ubuntu" ]; then
-  echo "Distribution: Ubuntu. Using apt." >> $LOGFILE
-  apt-get -y autoremove ansible &>> $LOGFILE
-else
-  echo "Distribution: CentOS. Using yum." >> $LOGFILE
-  yum remove -y ansible &>> $LOGFILE
-fi
+echo "Removing ansible venv" >> $LOGFILE
+deactivate >> $LOGFILE
+rm -rf /tmp/ansible_venv
+
+echo 'Removing roles' &>> $LOGFILE
+rm -rf $role_dir &>> $LOGFILE
 
 #________________________________
-# Remove ansible role
-#echo 'Removing indigo-dc.galaxycloud' &>> $LOGFILE
-rm -rf /etc/ansible/roles/indigo-dc.galaxycloud &>> $LOGFILE
-rm -rf /etc/ansible/roles/indigo-dc.galaxycloud-tools &>> $LOGFILE
-rm -rf /etc/ansible/roles/indigo-dc.galaxycloud-tooldeps &>> $LOGFILE
-
-#________________________________
-# Clean youm cache
+# Clean package manager cache
 
 if [ "$DISTNAME" = "ubuntu" ]; then
   apt-get clean

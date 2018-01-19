@@ -59,7 +59,7 @@ pip install ansible==2.2.1 &>> $LOGFILE
 
 # Install role
 role_dir=/tmp/roles
-BRANCH="devel"
+BRANCH="master"
 git clone https://github.com/indigo-dc/ansible-role-galaxycloud.git $role_dir/indigo-dc.galaxycloud &>> $LOGFILE
 cd $role_dir/indigo-dc.galaxycloud && git checkout $BRANCH &>> $LOGFILE
 

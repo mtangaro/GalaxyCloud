@@ -89,7 +89,7 @@ fi
 
 # stop galaxy
 echo 'Stop Galaxy' &>> $LOGFILE
-/usr/local/bin/galaxyctl stop galaxy &>> $LOGFILE
+/usr/bin/galaxyctl stop galaxy &>> $LOGFILE
 
 # shutdown supervisord
 echo 'Stop supervisord' &>> $LOGFILE

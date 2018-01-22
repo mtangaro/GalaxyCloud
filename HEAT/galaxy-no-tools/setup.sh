@@ -128,7 +128,7 @@ rm -rf $role_dir &>> $LOGFILE
 
 #________________________________
 # Clean package manager cache
-
+echo "Clean package manager cache" >> $LOGFILE
 if [ "$DISTNAME" = "ubuntu" ]; then
   apt-get clean
 else
@@ -147,8 +147,12 @@ fi
 
 #________________________________
 # Remove centos user
+echo "Remove default user" >> $LOGFILE
 if [ "$DISTNAME" = "ubuntu" ]; then
   userdel -r -f ubuntu
 else
   userdel -r -f centos
 fi
+
+#________________________________
+echo "End setup script" >> $LOGFILE

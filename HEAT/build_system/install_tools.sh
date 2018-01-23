@@ -23,55 +23,67 @@ install_pidfile='/var/log/galaxy/galaxy_tools_install.pid'
 ephemeris_version='0.7.0'
 
 #________________________________
-function check_postgresql_vm {
+# Get Distribution
+if [[ -r /etc/os-release ]]; then
+    . /etc/os-release
+fi
+
+#________________________________
+function start_postgresql_vm {
 
   # Check if postgresql is running
-  if [[ -r /etc/os-release ]]; then
-    . /etc/os-release
-    echo $ID
-    if [ "$ID" = "ubuntu" ]; then
-      echo "[Ubuntu][VM] Check postgresql."
-      if [ "$VERSION_ID" = "16.04"]; then
-        service start postgresql
-      else
-        systemctl start postgresql
-      fi
-    elif [ "$ID" = "centos" ]; then
+  if [[ $ID = "ubuntu" ]]; then
+    echo "[Ubuntu][VM] Check postgresql."
+    if [[ $VERSION_ID = "16.04" ]]; then
+      service start postgresql
+    else
+      systemctl start postgresql
+    fi
+  elif [[ $ID = "centos" ]]; then
       echo "[EL][VM] Check postgresql"
       systemctl start postgresql-9.6
-    fi
   fi
 }
 
-function check_postgresql_docker {
+function start_postgresql_docker {
 
-  if [[ -r /etc/os-release ]]; then
-    . /etc/os-release
-    echo $ID
-    if [ "$ID" = "ubuntu" ]; then
-      echo "[Ubuntu][Docker] Check postgresql."
-      service start postgresql
-    elif [ "$ID" = "centos" ]; then
-      echo "[EL][Docker] Check postgresql"
-      if [[ ! -f /var/lib/pgsql/9.6/data/postmaster.pid ]]; then
-        echo "Starting postgres on centos"
-        sudo -E -u postgres /usr/pgsql-9.6/bin/pg_ctl -D /var/lib/pgsql/9.6/data -w start
-      fi
+  if [[ $ID = "ubuntu" ]]; then
+    echo "[Ubuntu][Docker] Check postgresql."
+    service start postgresql
+  elif [ "$ID" = "centos" ]; then
+    echo "[EL][Docker] Check postgresql"
+    if [[ ! -f /var/lib/pgsql/9.6/data/postmaster.pid ]]; then
+      echo "Starting postgres on centos"
+      sudo -E -u postgres /usr/pgsql-9.6/bin/pg_ctl -D /var/lib/pgsql/9.6/data -w start
     fi
+  fi
+
+}
+
+unction check_postgres_status(){
+
+  PGUSER="${PGUSER:="postgres"}"
+
+  if [[ $ID = "ubuntu" ]]; then
+    echo 'placeholder'
+  elif [ "$ID" = "centos" ]; then
+    /usr/pgsql-9.6/bin/pg_isready -U "$PGUSER" -q
+    DATA=$?
   fi
 
 }
 
 function check_postgresql {
 
-  check_postgresql_vm
+  start_postgresql_vm
+
+  check_postgres_status
 
   # wait for database to finish starting up
-  STATUS=$(sudo -E -u postgres psql 2>&1)
-  while [[ ${STATUS} =~ "starting up" ]]
+  while [[ ${DATA}  != 0 ]]
   do
-    echo "waiting for database: $STATUS"
-    STATUS=$(sudo -E -u postgres psql 2>&1)
+    echo "waiting for database."
+    check_postgres_status
     sleep 1
   done
 }

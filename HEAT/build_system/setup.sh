@@ -53,6 +53,9 @@ function prerequisites(){
 # Ansible management
 function install_ansible(){
 
+  echo 'Remove ansible virtualenv if exists'
+  rm -rf $ansible_venv
+
   if [[ $DISTNAME = "ubuntu" ]]; then
     #Remove old ansible as workaround for https://github.com/ansible/ansible-modules-core/issues/5144
     dpkg -r ansible
@@ -103,6 +106,8 @@ function remove_ansible(){
   else
     yum remove -y ansible
   fi
+
+}
 
 #________________________________
 # Install ansible roles
@@ -198,7 +203,31 @@ function run_playbook(){
 #________________________________
 function build_base_image () {
 
-  echo 'placeholder'
+  # Install depdendencies
+  if [[ $DISTNAME = "ubuntu" ]]; then
+    apt-get -y update
+    apt-get -y install python-pip python-dev libffi-dev libssl-dev
+    apt-get -y install git vim python-pycurl wget
+  else
+    yum install -y epel-release &>> $LOGFILE
+    yum update -y
+    yum groupinstall -y "Development Tools"
+    yum install -y python-pip python-devel libffi-devel openssl-devel
+    yum install -y git vim python-curl wget
+  fi
+
+  # Install cvmfs packages
+  echo 'Install cvmfs client'
+  if [[ $DISTNAME" = "ubuntu" ]]; then
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest_all.deb -O /tmp/cvmfs-release-latest_all.deb
+    sudo dpkg -i /tmp/cvmfs-release-latest_all.deb
+    rm -f /tmp/cvmfs-release-latest_all.deb
+    sudo apt-get update
+    apt-get install -y cvmfs cvmfs-config-default
+  else
+    yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
+    yum install -y cvmfs cvmfs-config-default
+  fi
 
 }
 
@@ -245,30 +274,37 @@ function remove_user(){
 
 #________________________________
 # MAIN FUNCTION
-}
+
+{
+
 # install dependencies
 prerequisites
 
-# Prepare the system: install ansible, ansible roles and start postgres
-install_ansible
-install_ansible_roles
-start_postgresql
-
-# Run ansible play
-
-if [[ $galaxy_flavor = "galaxy-no-tools" ]]; then
-  run_playbook
-elif [[ $galaxy_flavor = "build_base_image" ]]; then
+if [[ $galaxy_flavor = "build_base_image" ]]; then
   build_base_image
+
 elif [[ $galaxy_flavor = "run_tools_script" ]]; then
+  start_postgresql
+  run_tools_script
+  stop_services
 
+else
+  # Prepare the system: install ansible, ansible roles
+  install_ansible
+  install_ansible_roles
+  # Run ansible play
+  run_playbook
+  # Stop all services and remove ansible
+  stop_services
+  remove_ansible
 
-# Stop all services and clean the environment
-stop_services
-remove_ansible
+fi
+
+# Clean the environment
 clean_package_manager_cache
 copy_cloud_init_script
 remove_user
+
 } >> $LOGFILE
 
 echo "End setup script" >> $LOGFILE

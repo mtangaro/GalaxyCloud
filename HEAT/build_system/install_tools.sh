@@ -117,6 +117,7 @@ function install_ephemeris {
   virtualenv /tmp/tools_venv
   source /tmp/tools_venv/bin/activate
   echo "Install ephemeris using pip in the clean environment"
+  pip install bioblend
   pip install ephemeris==$ephemeris_version
 }
 

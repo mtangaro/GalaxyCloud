@@ -60,7 +60,7 @@ function start_postgresql_docker {
 
 }
 
-unction check_postgres_status(){
+function check_postgres_status {
 
   PGUSER="${PGUSER:="postgres"}"
 

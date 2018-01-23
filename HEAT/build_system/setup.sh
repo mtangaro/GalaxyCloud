@@ -234,7 +234,28 @@ function build_base_image () {
 #________________________________
 function run_tools_script() {
 
-  echo 'placeholder'
+  # Get install script
+  wget https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/build_system/install_tools.sh -O /usr/local/bin/install-tools
+  chmod +x /usr/local/bin/install-tools
+
+  # Get recipe
+  echo 'Get tools recipe'
+  wget $tools_recipe_url  -O /tmp/tools.yml
+
+  # create fake user
+  echo "create fake user"
+  /usr/bin/python /usr/local/bin/create_galaxy_user.py --user placeholder@placeholder.com --password placeholder --username placeholder -c /home/galaxy/galaxy/config/galaxy.ini --key placeholder_api_key
+
+  # run install script
+  echo "run install-tools script"
+  /usr/local/bin/install-tools placeholder_api_key /tmp/tools.yml
+
+  echo "remove conda tarballs"
+  /home/galaxy/tool_deps/_conda/bin/conda clean --tarballs --yes > /dev/null
+
+  # delete fake user
+  cd $HOME/galaxy
+  /usr/bin/python /usr/local/bin/delete_galaxy_user.py --user placeholder@placeholder.com 
 
 }
 

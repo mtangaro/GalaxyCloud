@@ -190,8 +190,22 @@ function stop_services(){
 # Run playbook
 function run_playbook(){
 
-  wget $1 -O /tmp/playbook.yml
+  wget https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/build_system/$galaxy_flavor.yml -O /tmp/playbook.yml
   ansible-playbook /tmp/playbook.yml
+
+}
+
+#________________________________
+function build_base_image () {
+
+  echo 'placeholder'
+
+}
+
+#________________________________
+function run_tools_script() {
+
+  echo 'placeholder'
 
 }
 
@@ -241,7 +255,13 @@ install_ansible_roles
 start_postgresql
 
 # Run ansible play
-run_playbook $1
+
+if [[ $galaxy_flavor = "galaxy-no-tools" ]]; then
+  run_playbook
+elif [[ $galaxy_flavor = "build_base_image" ]]; then
+  build_base_image
+elif [[ $galaxy_flavor = "run_tools_script" ]]; then
+
 
 # Stop all services and clean the environment
 stop_services

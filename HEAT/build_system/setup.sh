@@ -254,6 +254,7 @@ function run_tools_script() {
   /home/galaxy/tool_deps/_conda/bin/conda clean --tarballs --yes > /dev/null
 
   # delete fake user
+  echo "delete fake user"
   cd $HOME/galaxy
   /usr/bin/python /usr/local/bin/delete_galaxy_user.py --user placeholder@placeholder.com 
 

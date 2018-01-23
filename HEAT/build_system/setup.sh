@@ -218,7 +218,7 @@ function build_base_image () {
 
   # Install cvmfs packages
   echo 'Install cvmfs client'
-  if [[ $DISTNAME" = "ubuntu" ]]; then
+  if [[ $DISTNAME = "ubuntu" ]]; then
     wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest_all.deb -O /tmp/cvmfs-release-latest_all.deb
     sudo dpkg -i /tmp/cvmfs-release-latest_all.deb
     rm -f /tmp/cvmfs-release-latest_all.deb
@@ -240,22 +240,22 @@ function run_tools_script() {
 
   # Get recipe
   echo 'Get tools recipe'
-  wget $tools_recipe_url  -O /tmp/tools.yml
+  wget $tools_recipe_url -O /tmp/tools.yml
 
   # create fake user
-  echo "create fake user"
+  echo 'create fake user'
   /usr/bin/python /usr/local/bin/create_galaxy_user.py --user placeholder@placeholder.com --password placeholder --username placeholder -c /home/galaxy/galaxy/config/galaxy.ini --key placeholder_api_key
 
   # run install script
-  echo "run install-tools script"
+  echo 'run install-tools script'
   /usr/local/bin/install-tools placeholder_api_key /tmp/tools.yml
 
-  echo "remove conda tarballs"
+  echo 'remove conda tarballs'
   /home/galaxy/tool_deps/_conda/bin/conda clean --tarballs --yes > /dev/null
 
   # delete fake user
-  echo "delete fake user"
-  cd $HOME/galaxy
+  echo 'delete fake user'
+  cd /home/galaxy/galaxy
   /usr/bin/python /usr/local/bin/delete_galaxy_user.py --user placeholder@placeholder.com 
 
 }

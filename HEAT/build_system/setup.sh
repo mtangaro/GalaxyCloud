@@ -209,7 +209,7 @@ function build_base_image () {
     apt-get -y install python-pip python-dev libffi-dev libssl-dev
     apt-get -y install git vim python-pycurl wget
   else
-    yum install -y epel-release &>> $LOGFILE
+    yum install -y epel-release
     yum update -y
     yum groupinstall -y "Development Tools"
     yum install -y python-pip python-devel libffi-devel openssl-devel
@@ -284,23 +284,11 @@ function clean_package_manager_cache(){
 }
 
 #________________________________
-# Copy remove cloud-init artifact script
-function copy_cloud_init_script(){
+# Copy remove cloud-init artifact and user  script
+# Run this script after setup finished
+function copy_clean_instance_script(){
 
-  wget https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/build_system/clean_cloudinit_artifact.sh -O /tmp/clean_cloudinit_artifact.sh
-
-}
-
-#________________________________
-# Remove cloud-init user
-function remove_user(){
-
-  echo "Remove default user"
-  if [[ $DISTNAME = "ubuntu" ]]; then
-    userdel -r -f ubuntu
-  else
-    userdel -r -f centos
-  fi
+  wget https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/build_system/clean_instance.sh -O /tmp/clean_instance.sh
 
 }
 
@@ -334,8 +322,7 @@ fi
 
 # Clean the environment
 clean_package_manager_cache
-copy_cloud_init_script
-#remove_user
+copy_clean_instance_script
 
 } &>> $LOGFILE
 

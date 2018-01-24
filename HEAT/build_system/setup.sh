@@ -337,13 +337,13 @@ function copy_clean_instance_script(){
 prerequisites
 
 if [[ $galaxy_flavor = "base_image" ]]; then
-  if [[ $action == 'BUILD' ]]; then build_base_image fi
+  if [[ $action == 'BUILD' ]]; then build_base_image; fi
 
 elif [[ $galaxy_flavor = "run_tools_script" ]]; then
   start_postgresql
   run_tools_script
-  if [[ $action == 'BUILD' ]]; then stop_services fi
-  if [[ $action == 'RUN' ]]; then start_services fi
+  if [[ $action == 'BUILD' ]]; then stop_services; fi
+  if [[ $action == 'RUN' ]]; then start_services; fi
 
 else
   # Prepare the system: install ansible, ansible roles
@@ -352,8 +352,8 @@ else
   # Run ansible play
   run_playbook
   # Stop all services and remove ansible
-  if [[ $action == 'BUILD' ]]; then stop_services fi
-  if [[ $action == 'BUILD' ]]; then remove_ansible fi
+  if [[ $action == 'BUILD' ]]; then stop_services; fi
+  if [[ $action == 'BUILD' ]]; then remove_ansible; fi
 
 fi
 

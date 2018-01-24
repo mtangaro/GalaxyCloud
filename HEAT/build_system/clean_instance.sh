@@ -39,3 +39,6 @@ rm /var/log/cloud-init-output.log
 
 echo "Remove default user"
 userdel -r -f $ID
+
+#________________________________
+echo 'Instance cleanup complete!'

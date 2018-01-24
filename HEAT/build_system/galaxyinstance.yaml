@@ -33,9 +33,13 @@ parameters:
     description: ID of public sub network into which servers get deployed
     default: fe82ef7b-4bb7-4c1e-b4ec-ec5c1b0c7333
 
+  action:
+    type: string
+    description: RUN or BUILD flavor
+    default: RUN
   flavor:
     type: string
-    description: install full galaxy flavor (build_base_image and run_tools_script are also possible values)
+    description: install full galaxy flavor (base_image and run_tools_script are also possible values)
     default: galaxy-no-tools
   tools_recipe_url:
     type: string
@@ -62,6 +66,7 @@ resources:
         str_replace:
           template: { get_file: setup.sh }
           params:
+            $action: { get_param: action }
             $galaxy_flavor: { get_param: flavor }
             $tools_recipe_url: { get_param: tools_recipe_url }
       user_data_format: RAW

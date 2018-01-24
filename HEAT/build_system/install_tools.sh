@@ -29,9 +29,9 @@ if [[ -r /etc/os-release ]]; then
 fi
 
 #________________________________
+# Check if postgresql is running
 function start_postgresql_vm {
 
-  # Check if postgresql is running
   if [[ $ID = "ubuntu" ]]; then
     echo "[Ubuntu][VM] Check postgresql."
     if [[ $VERSION_ID = "16.04" ]]; then
@@ -92,18 +92,12 @@ function check_postgresql {
 # Install lsof
 
 function install_lsof {
-  if [[ -r /etc/os-release ]]; then
-    . /etc/os-release
-    echo $ID
-    if [ "$ID" = "ubuntu" ]; then
-      echo "[Ubuntu] Installing lsof with apt."
-      apt-get install -y lsof
-    elif [ "$ID" = "centos" ]; then
-      echo "[EL] Installing lsof with yum."
-      yum install -y lsof
-    fi
+  if [[ $ID = "ubuntu" ]]; then
+    echo "[Ubuntu] Installing lsof with apt."
+    apt-get install -y lsof
   else
-    echo "Not running a distribution with /etc/os-release available."
+    echo "[EL] Installing lsof with yum."
+    yum install -y lsof
   fi
 }
 

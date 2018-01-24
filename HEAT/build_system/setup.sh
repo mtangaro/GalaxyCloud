@@ -234,9 +234,14 @@ function build_base_image () {
 #________________________________
 function run_tools_script() {
 
+  galaxy_config_file=/home/galaxy/galaxy/config/galaxy.ini
+  galaxy_venv_path=/home/galaxy/galaxy/.venv
+  conda_prefix=/home/galaxy/tool_deps/_conda
+  galaxy_custom_script_path=/usr/local/bin
+
   # Get install script
-  wget https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/build_system/install_tools.sh -O /usr/local/bin/install-tools
-  chmod +x /usr/local/bin/install-tools
+  wget https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/build_system/install_tools.sh -O $galaxy_custom_script_path/install-tools
+  chmod +x $galaxy_custom_script_path/install-tools
 
   # Get recipe
   echo 'Get tools recipe'
@@ -244,20 +249,25 @@ function run_tools_script() {
 
   # create fake user
   echo 'create fake user'
-  /usr/bin/python /usr/local/bin/create_galaxy_user.py --user placeholder@placeholder.com --password placeholder --username placeholder -c /home/galaxy/galaxy/config/galaxy.ini --key placeholder_api_key
+  $galaxy_venv_path/bin/python $galaxy_custom_script_path/create_galaxy_user.py --user placeholder@placeholder.com --password placeholder --username placeholder -c $galaxy_config_file --key placeholder_api_key
+
+  # make fake user galaxy administrator
+  sed -i 's\^#admin_users = None\admin_users = placeholder@placeholder.com\' $galaxy_config_file
 
   # run install script
   echo 'run install-tools script'
-  /usr/local/bin/install-tools placeholder_api_key /tmp/tools.yml
+  $galaxy_custom_script_path/install-tools placeholder_api_key /tmp/tools.yml
 
   echo 'remove conda tarballs'
-  /home/galaxy/tool_deps/_conda/bin/conda clean --tarballs --yes > /dev/null
+  $conda_prefix/bin/conda clean --tarballs --yes > /dev/null
 
   # delete fake user
   echo 'delete fake user'
   cd /home/galaxy/galaxy
-  /usr/bin/python /usr/local/bin/delete_galaxy_user.py --user placeholder@placeholder.com 
+  $galaxy_venv_path/bin/python $galaxy_custom_script_path/delete_galaxy_user.py --user placeholder@placeholder.com
 
+  # remove fake user from galaxy.ini admin section
+  sed -i 's\^admin_users = placeholder@placeholder.com\#admin_users = None\' $galaxy_config_file
 }
 
 #________________________________
@@ -325,8 +335,8 @@ fi
 # Clean the environment
 clean_package_manager_cache
 copy_cloud_init_script
-remove_user
+#remove_user
 
-} >> $LOGFILE
+} &>> $LOGFILE
 
-echo "End setup script" >> $LOGFILE
+echo 'End setup script' &>> $LOGFILE

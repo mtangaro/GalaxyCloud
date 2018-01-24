@@ -8,6 +8,7 @@ ANSIBLE_VERSION=2.2.1
 
 OS_BRANCH="master"
 BRANCH="master"
+FASTCONFIG_BRANCH='master'
 TOOLS_BRANCH="devel"
 TOOLDEPS_BRANCH="devel"
 REFDATA_BRANCH="devel"
@@ -42,8 +43,10 @@ fi
 function prerequisites(){
 
   if [[ $DISTNAME = "ubuntu" ]]; then
-    apt-get -y install git vim python-pycurl wget
+    apt-get -y install git vim wget
   else
+    yum install -y epel-release
+    yum update -y
     yum install -y git vim wget
   fi
 
@@ -124,9 +127,12 @@ function install_ansible_roles(){
   git clone https://github.com/indigo-dc/ansible-role-galaxycloud-os.git $role_dir/indigo-dc.galaxycloud-os
   cd $role_dir/indigo-dc.galaxycloud-os && git checkout $OS_BRANCH
 
-  # 2. indigo-dc.galaxycloud
+  # 2. indigo-dc.galaxycloud and indigo-dc.galaxycloud-fastconfig
   git clone https://github.com/indigo-dc/ansible-role-galaxycloud.git $role_dir/indigo-dc.galaxycloud
   cd $role_dir/indigo-dc.galaxycloud && git checkout $BRANCH
+
+  git clone https://github.com/indigo-dc/ansible-role-galaxycloud-fastconfig.git $role_dir/indigo-dc.galaxycloud-fastconfig
+  cd $role_dir/indigo-dc.galaxycloud-fastconfig && git checkout $FASTCONFIG_BRANCH
 
   #### # 3. indigo-dc.galaxy-tools
   #### git clone https://github.com/indigo-dc/ansible-galaxy-tools.git $role_dir/indigo-dc.galaxy-tools
@@ -192,10 +198,40 @@ function stop_services(){
 }
 
 #________________________________
+# Start all services with rigth order
+function stop_services(){
+
+  # start postgres
+  echo 'Start postgresql'
+  if [[ $DISTNAME = "ubuntu" ]]; then
+    systemctl start postgresql
+    systemctl enable postgresql
+  else
+    systemctl start postgresql-9.6
+    systemctl enable postgresql-9.6
+  fi
+
+  # start nginx
+  echo 'Start nginx'
+  systemctl start nginx
+  systemctl enable nginx
+
+  # start proftpd
+  echo 'Start proftpd'
+  systemctl start proftpd
+  systemctl enable proftpd
+
+  # start galaxy
+  echo 'Start Galaxy'
+  /usr/local/bin/galaxy-startup
+
+}
+
+#________________________________
 # Run playbook
 function run_playbook(){
 
-  wget https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/build_system/$galaxy_flavor.yml -O /tmp/playbook.yml
+  wget https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/build_system/$action/$galaxy_flavor.yml -O /tmp/playbook.yml
   ansible-playbook /tmp/playbook.yml
 
 }
@@ -300,13 +336,14 @@ function copy_clean_instance_script(){
 # install dependencies
 prerequisites
 
-if [[ $galaxy_flavor = "build_base_image" ]]; then
-  build_base_image
+if [[ $galaxy_flavor = "base_image" ]]; then
+  if [[ $action == 'BUILD' ]]; then build_base_image fi
 
 elif [[ $galaxy_flavor = "run_tools_script" ]]; then
   start_postgresql
   run_tools_script
-  stop_services
+  if [[ $action == 'BUILD' ]]; then stop_services fi
+  if [[ $action == 'RUN' ]]; then start_services fi
 
 else
   # Prepare the system: install ansible, ansible roles
@@ -315,8 +352,8 @@ else
   # Run ansible play
   run_playbook
   # Stop all services and remove ansible
-  stop_services
-  remove_ansible
+  if [[ $action == 'BUILD' ]]; then stop_services fi
+  if [[ $action == 'BUILD' ]]; then remove_ansible fi
 
 fi
 

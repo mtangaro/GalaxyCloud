@@ -289,7 +289,7 @@ function clean_package_manager_cache(){
 function copy_clean_instance_script(){
 
   wget https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/build_system/clean_instance.sh -O /tmp/clean_instance.sh
-
+  chmod +x /tmp/clean_instance.sh
 }
 
 #________________________________

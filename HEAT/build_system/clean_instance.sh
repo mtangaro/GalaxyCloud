@@ -1,11 +1,28 @@
 #!/bin/bash
-# Clean instance and get it ready for snapshot.
+
+# This script cleans up the instance and
+# get it ready for snapshot.
 
 #________________________________
 # Get Distribution
 if [[ -r /etc/os-release ]]; then
     . /etc/os-release
 fi
+
+#________________________________
+echo 'Remove SSH keys'
+[ -f /home/$ID/.ssh/authorized_keys ] && rm /home/$ID/.ssh/authorized_keys
+[ -f /root/.ssh/authorized_keys ] && rm /root/.ssh/authorized_keys
+
+#________________________________
+echo 'Cleanup log files'
+find /var/log -type f | while read f; do echo -ne '' > $f; done
+
+#________________________________
+echo 'Cleanup bash history'
+unset HISTFILE
+[ -f /root/.bash_history ] && rm /root/.bash_history
+[ -f /home/$ID/.bash_history ] && rm /home/$ID/.bash_history
 
 #________________________________
 # Remove cloud-init artifact
@@ -21,8 +38,4 @@ rm /var/log/cloud-init-output.log
 # Delete cloud-init user
 
 echo "Remove default user"
-if [[ $ID = "ubuntu" ]]; then
-  userdel -r -f ubuntu
-else
-  userdel -r -f centos
-fi
+userdel -r -f $ID

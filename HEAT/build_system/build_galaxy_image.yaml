@@ -1,0 +1,22 @@
+heat_template_version: 2014-10-16
+
+description: setup server
+
+resources:
+  vm_os:
+    type: galaxyinstance.yaml
+    properties:
+      key_name: mtangaro-key
+      vm_name: galaxy_server
+      #image_id: 9ba220c2-7205-484b-bd19-d4af8194d298 # ubuntu 16.04
+      #image_id: f38d4e87-cc7e-4035-921b-6b200a9ebaee # CentOS 7 1708
+      image_id: 0c4c232d-d90d-43da-b53a-ccbe8a6edc46 # CentOS 7 1708 BASE
+      #image_id: f9156e4c-628c-4e84-a982-591cdb0edf08 # CentOS 7 1708 Galaxy New
+      instance_type: medium #4cpu-4GB-20dsk
+      availability_zone: nova
+      net_id: fe82ef7b-4bb7-4c1e-b4ec-ec5c1b0c7333 #pub-ip
+      #---
+      action: 'BUILD'
+      # base_image and run_tools_script are also possible values
+      flavor: 'galaxy-testing'
+      tools_recipe_url: 'https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/build_system/tools.yml'

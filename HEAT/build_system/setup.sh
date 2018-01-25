@@ -8,7 +8,7 @@ ANSIBLE_VERSION=2.2.1
 
 OS_BRANCH="master"
 BRANCH="master"
-FASTCONFIG_BRANCH='master'
+FASTCONFIG_BRANCH='devel'
 TOOLS_BRANCH="devel"
 TOOLDEPS_BRANCH="devel"
 REFDATA_BRANCH="devel"
@@ -350,10 +350,10 @@ function copy_clean_instance_script(){
 # install dependencies
 prerequisites
 
-if [[ $galaxy_flavor = "base_image" ]]; then
+if [[ $galaxy_flavor == "base_image" ]]; then
   if [[ $action == 'BUILD' ]]; then build_base_image; fi
 
-elif [[ $galaxy_flavor = "run_tools_script" ]]; then
+elif [[ $galaxy_flavor == "run_tools_script" ]]; then
   start_postgresql
   run_tools_script
   if [[ $action == 'BUILD' ]]; then stop_services; fi

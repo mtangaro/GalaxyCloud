@@ -19,14 +19,28 @@ role_dir=/tmp/roles
 # Start logging
 LOGFILE="/tmp/setup.log"
 now=$(date +"-%b-%d-%y-%H%M%S")
-echo "Start log ${now}" > $LOGFILE
+echo "Start log ${now}" &>>  $LOGFILE
+
+#________________________________
+# Mount external volumes
+# The volume is mounted only on running instances
+# When a new image is built, there's no need of an external volume.
+if [[ $action == 'RUN' ]]; then
+  {
+  volid=$volume_id
+  volume_dev="/dev/disk/by-id/virtio-$(echo ${volid} | cut -c -20)"
+  mkdir -p $volume_mountpoint
+  mkfs.ext4 ${volume_dev} && mount ${volume_dev} $volume_mountpoint || notify_err "Some problems occurred with block device (Volume 1)"
+  echo "Device successfully mounted ${volume_mountpoint}"
+  } &>> $LOGFILE
+fi
 
 #________________________________
 # Get Distribution
 DISTNAME=''
 if [[ -r /etc/os-release ]]; then
     . /etc/os-release
-    echo $ID > $LOGFILE
+    echo $ID &>> $LOGFILE
     if [ "$ID" = "ubuntu" ]; then
       echo 'Distribution Ubuntu' &>> $LOGFILE
       DISTNAME='ubuntu'

@@ -18,8 +18,9 @@ role_dir=/tmp/roles
 #________________________________
 # Start logging
 LOGFILE="/tmp/setup.log"
-now=$(date +"-%b-%d-%y-%H%M%S")
-echo "Start log ${now}" &>>  $LOGFILE
+now=$(date +"%b %d %y - %H.%M.%S")
+rm -f $LOGFILE
+echo "Start log: ${now}" &>>  $LOGFILE
 
 #________________________________
 # Mount external volumes

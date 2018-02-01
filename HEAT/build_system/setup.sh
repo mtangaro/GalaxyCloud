@@ -7,10 +7,10 @@ ansible_venv=/tmp/myansible
 ANSIBLE_VERSION=2.2.1
 
 OS_BRANCH="master"
-BRANCH="master"
+BRANCH="devel"
 FASTCONFIG_BRANCH='devel'
-TOOLS_BRANCH="devel"
-TOOLDEPS_BRANCH="devel"
+TOOLS_BRANCH="master"
+TOOLDEPS_BRANCH="master"
 REFDATA_BRANCH="devel"
 
 role_dir=/tmp/roles
@@ -214,7 +214,7 @@ function stop_services(){
 
 #________________________________
 # Start all services with rigth order
-function stop_services(){
+function start_services(){
 
   # start postgres
   echo 'Start postgresql'

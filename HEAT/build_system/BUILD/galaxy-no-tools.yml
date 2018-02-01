@@ -13,6 +13,7 @@
       tool_deps_path: '/home/galaxy/tool_deps'
       conda_prefix: '/home/galaxy/tool_deps/_conda'
       job_work_dir: 'database/jobs_directory'
+      require_login: 'False' # disable login option only for galaxy images
 
 - name: Post installation tasks
   hosts: localhost

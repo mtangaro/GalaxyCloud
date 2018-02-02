@@ -183,7 +183,7 @@ topology_template:
         # Guest Operating System properties
         os:
           properties:
-            image: { concat: ['linux-centos-', get_input: flavor, '-vmi'] } # linux-centos-galaxy-no-tools-vmi
+            image: { concat: ['centos-7-1708-', get_input: flavor ] } # centos-7-1708-galaxy-no-tools
       requirements:
         # contextually this can only be a relationship type
         - local_storage:

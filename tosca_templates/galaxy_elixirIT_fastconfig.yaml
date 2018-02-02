@@ -134,6 +134,7 @@ topology_template:
         instance_description: { get_input: instance_description }
         instance_key_pub: { get_input: instance_key_pub }
         export_dir: { get_input: export_dir }
+        flavor: { get_input: flavor }
       requirements:
         - lrms: local_lrms
 

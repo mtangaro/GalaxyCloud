@@ -6,7 +6,7 @@
     - role: indigo-dc.galaxycloud-tools
       galaxy_flavor: 'galaxy-epigen'
       move_datasets: false
-      user_master_api_key: true
+      use_master_api_key: true
       when: galaxy_flavor != 'galaxy-no-tools'
 
     - role: indigo-dc.galaxycloud-tooldeps

@@ -6,12 +6,12 @@
 ansible_venv=/tmp/myansible
 ANSIBLE_VERSION=2.2.1
 
-OS_BRANCH="master"
-BRANCH="devel"
-FASTCONFIG_BRANCH='devel'
-TOOLS_BRANCH="master"
-TOOLDEPS_BRANCH="master"
-REFDATA_BRANCH="devel"
+OS_BRANCH='devel'
+BRANCH='delvel'
+FASTCONFIG_BRANCH='master'
+TOOLS_BRANCH='devel'
+TOOLDEPS_BRANCH='master'
+REFDATA_BRANCH='master'
 
 role_dir=/tmp/roles
 
@@ -265,6 +265,7 @@ function build_base_image () {
     yum groupinstall -y "Development Tools"
     yum install -y python-pip python-devel libffi-devel openssl-devel
     yum install -y git vim python-curl wget
+    yum install -y dejavu*
   fi
 
   # Install cvmfs packages

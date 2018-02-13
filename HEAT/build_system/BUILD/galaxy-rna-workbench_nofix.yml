@@ -6,5 +6,5 @@
     - role: indigo-dc.galaxycloud-tools
       galaxy_flavor: 'galaxy-rna-workbench'
       move_datasets: false
-      create_bootstrap_user: true
+      use_master_api_key: true
       when: galaxy_flavor != 'galaxy-no-tools'

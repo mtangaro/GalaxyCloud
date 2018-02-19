@@ -6,10 +6,10 @@
 ansible_venv=/tmp/myansible
 ANSIBLE_VERSION=2.2.1
 
-OS_BRANCH='devel'
+OS_BRANCH='master'
 BRANCH='delvel'
 FASTCONFIG_BRANCH='master'
-TOOLS_BRANCH='devel'
+TOOLS_BRANCH='master'
 TOOLDEPS_BRANCH='master'
 REFDATA_BRANCH='master'
 
@@ -58,6 +58,7 @@ fi
 function prerequisites(){
 
   if [[ $DISTNAME = "ubuntu" ]]; then
+    apt-get -y update
     apt-get -y install git vim wget
   else
     yum install -y epel-release
@@ -265,7 +266,9 @@ function build_base_image () {
     yum groupinstall -y "Development Tools"
     yum install -y python-pip python-devel libffi-devel openssl-devel
     yum install -y git vim python-curl wget
-    yum install -y dejavu*
+    # fix font problem with centos and fastqc tool.
+    yum install -y fontconfig dejavu*
+    /usr/bin/fc-cache /usr/share/fonts/dejavu
   fi
 
   # Install cvmfs packages

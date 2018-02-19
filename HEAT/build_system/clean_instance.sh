@@ -41,4 +41,8 @@ echo "Remove default user"
 userdel -r -f $ID
 
 #________________________________
+echo 'Remove /tmp dir content'
+rm -rf /tmp/*
+
+#________________________________
 echo 'Instance cleanup complete!'

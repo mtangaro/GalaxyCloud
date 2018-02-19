@@ -6,9 +6,9 @@
 ansible_venv=/tmp/myansible
 ANSIBLE_VERSION=2.2.1
 
-OS_BRANCH='master'
+OS_BRANCH='devel'
 BRANCH='delvel'
-FASTCONFIG_BRANCH='master'
+FASTCONFIG_BRANCH='devel'
 TOOLS_BRANCH='master'
 TOOLDEPS_BRANCH='master'
 REFDATA_BRANCH='master'
@@ -248,6 +248,7 @@ function start_services(){
 function run_playbook(){
 
   wget https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/HEAT/build_system/$action/$galaxy_flavor.yml -O /tmp/playbook.yml
+  cd $ansible_venv
   ansible-playbook /tmp/playbook.yml
 
 }
@@ -282,6 +283,60 @@ function build_base_image () {
   else
     yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
     yum install -y cvmfs cvmfs-config-default
+  fi
+
+}
+
+#________________________________
+# build image with slurm already installed
+# currently only for centos
+# TODO ubuntu
+function build_slurm_base_image () {
+
+  build_base_image
+
+  # Install slurm
+  if [[ $DISTNAME = "ubuntu" ]]; then
+    # TODO install slurm
+    echo 'to do'
+  else
+    #build indigo slurm repository url path
+    slurm_ver='16.05.8'
+    package_ver='1'
+    family='el7'
+    distribution='centos'
+    architecture='x86_64'
+    slurm_url='https://github.com/indigo-dc/ansible-role-slurm/raw/master/files/centos7/'${slurm_ver}
+    # download packages
+    wget $slurm_url/slurm-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-devel-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-devel-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-munge-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-munge-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-openlava-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-openlava-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-pam_slurm-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-pam_slurm-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-perlapi-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-perlapi-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-plugins-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-plugins-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-seff-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-seff-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-sjobexit-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-sjobexit-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-sjstat-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-sjstat-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-slurmdb-direct-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-slurmdb-direct-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-slurmdbd-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-slurmdbd-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-sql-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-sql-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    wget $slurm_url/slurm-torque-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm -O /tmp/slurm-torque-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
+    # install slurm packages
+    yum --nogpgcheck localinstall -y /tmp/slurm-plugins-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-devel-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-munge-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-perlapi-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-openlava-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-pam_slurm-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-seff-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-sjobexit-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-sjstat-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-slurmdb-direct-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-slurmdbd-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-sql-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm \
+                                     /tmp/slurm-torque-${slurm_ver}-${package_ver}.${family}.$distribution.${architecture}.rpm
   fi
 
 }
@@ -357,6 +412,9 @@ prerequisites
 
 if [[ $galaxy_flavor == "base_image" ]]; then
   if [[ $action == 'BUILD' ]]; then build_base_image; fi
+
+elif [[ $galaxy_flavor == "slurm_base_image" ]]; then
+  if [[ $action == 'BUILD' ]]; then build_slurm_base_image; fi
 
 elif [[ $galaxy_flavor == "run_tools_script" ]]; then
   start_postgresql

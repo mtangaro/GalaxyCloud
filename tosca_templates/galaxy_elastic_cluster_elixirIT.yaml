@@ -26,7 +26,7 @@ topology_template:
     storage_size:
       type: string
       description: storage memory required for the instance
-      default: 10 GB
+      default: 100 GB
     hybrid:
       type: boolean
       description: Flag to specify that this cluster will work in an hybrid environment
@@ -190,7 +190,9 @@ topology_template:
             instance_type: { get_input: fe_instance_flavor }
         os:
           properties:
-            image: centos-7-1708-galaxy-base
+            image: centos-7-1708-galaxy-slurm
+            #image: centos-7-1708-galaxy-base
+            #image: ubuntu-16.04-vmi
       requirements:
         # contextually this can only be a relationship type
         - local_storage:
@@ -250,7 +252,9 @@ topology_template:
             instance_type: { get_input: wn_instance_flavor }
         os:
           properties:
-            image: centos-7-1708-galaxy-base
+            image: centos-7-1708-galaxy-slurm
+            #image: centos-7-1708-galaxy-base
+            #image: ubuntu-16.04-vmi
 
   outputs:
     galaxy_url:

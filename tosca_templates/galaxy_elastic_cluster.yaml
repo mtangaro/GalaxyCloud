@@ -100,7 +100,7 @@ topology_template:
                 source: 80
         host:
           properties:
-            instance_type: { get_input: wn_instance_flavor }
+            instance_type: { get_input: fe_instance_flavor }
         os:
           properties:
             image: centos-7-1708-galaxy-base
@@ -137,7 +137,7 @@ topology_template:
             count: 0
         host:
           properties:
-            instance_type: { get_input: fe_instance_flavor }
+            instance_type: { get_input: wn_instance_flavor }
         os:
           properties:
             image: centos-7-1708-galaxy-base

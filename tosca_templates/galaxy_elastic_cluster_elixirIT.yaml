@@ -10,11 +10,15 @@ description: >
 
 topology_template:
   inputs:
-    wn_num:
+    wn_num_max:
       type: integer
       description: Maximum number of WNs in the elastic cluster
       default: 1
       required: yes
+    wn_num_min:
+      type: integer
+      description: Minimum number of WNs in the elastic cluster
+      default: 0
     fe_instance_flavor:
       type: string
       description: front end flavor (num_cpu, memory, disk)
@@ -219,8 +223,8 @@ topology_template:
       capabilities:
         wn:
           properties:
-            max_instances: { get_input: wn_num }
-            min_instances: 0
+            max_instances: { get_input: wn_num_max }
+            min_instances: { get_input: wn_num_min }
       requirements:
         - host: lrms_wn
 
@@ -246,7 +250,7 @@ topology_template:
       capabilities:
         scalable:
           properties:
-            count: 0
+            count: { get_input: wn_num_min }
         host:
           properties:
             instance_type: { get_input: wn_instance_flavor }

@@ -1,7 +1,7 @@
 tosca_definitions_version: tosca_simple_yaml_1_0
 
 imports:
-  - indigo_custom_types: https://raw.githubusercontent.com/indigo-dc/tosca-types/mtangaro/custom_types.yaml
+  - indigo_custom_types: https://raw.githubusercontent.com/indigo-dc/tosca-types/master/custom_types.yaml
 
 description: >
   TOSCA test for launching a Virtual Cluster.
@@ -10,29 +10,17 @@ topology_template:
   inputs:
     wn_num:
       type: integer
-      description: Maximum number of WNs in the elastic cluster
-      default: 5
+      description: Number of WNs in the cluster
+      default: 2
       required: yes
-    fe_cpus:
-      type: integer
-      description: Numer of CPUs for the front-end node
-      default: 1
-      required: yes
-    fe_mem:
-      type: scalar-unit.size
-      description: Amount of Memory for the front-end node
-      default: 1 GB
-      required: yes
-    wn_cpus:
-      type: integer
-      description: Numer of CPUs for the WNs
-      default: 1
-      required: yes
-    wn_mem:
-      type: scalar-unit.size
-      description: Amount of Memory for the WNs
-      default: 1 GB
-      required: yes
+    fe_instance_flavor:
+      type: string
+      description: front end flavor (num_cpu, memory, disk)
+      default: small
+    wn_instance_flavor:
+      type: string
+      description: worker nodes flavor (num_cpu, memory, disk)
+      default: small
     storage_size:
       type: string
       description: storage memory required for the instance
@@ -105,7 +93,7 @@ topology_template:
     refdata_provider_type:
       type: string
       description: Select Reference data provider type (Onedata, CernVM-FS or download)
-      default: 'onedata'
+      default: 'cvmfs'
     refdata_provider:
       type: string
       description: Oneprovider for reference data
@@ -117,15 +105,15 @@ topology_template:
     refdata_cvmfs_server_url:
       type: string
       description: CernVM-FS server, replica or stratum-zero
-      default: 'server_url'
+      default: '90.147.102.186'
     refdata_cvmfs_repository_name:
       type: string
       description: Reference data CernVM-FS repository name
-      default: 'not_a_cvmfs_repository_name'
+      default: 'elixir-italy.galaxy.refdata'
     refdata_cvmfs_key_file:
       type: string
       description: CernVM-FS public key
-      default: 'not_a_key'
+      default: 'elixir-italy.galaxy.refdata.pub'
     refdata_cvmfs_proxy_url:
       type: string
       description: CernVM-FS proxy url
@@ -205,11 +193,12 @@ topology_template:
                 source: 21
         host:
           properties:
-            num_cpus: { get_input: fe_cpus }
-            mem_size: { get_input: fe_mem }
+            instance_type: { get_input: fe_instance_flavor }
         os:
           properties:
-            image: linux-ubuntu-16.04-vmi
+            image: centos-7-1708-galaxy-base
+            #image: centos-7-1708-vmi
+            #image: ubuntu-16.04-vmi
       requirements:
         # contextually this can only be a relationship type
         - local_storage:
@@ -262,11 +251,12 @@ topology_template:
             count: { get_input: wn_num }
         host:
           properties:
-            num_cpus: { get_input: wn_cpus }
-            mem_size: { get_input: wn_mem }
+            instance_type: { get_input: wn_instance_flavor }
         os:
           properties:
-            image: linux-ubuntu-16.04-vmi
+            image: centos-7-1708-galaxy-base
+            #image: centos-7-1708-vmi
+            #image: ubuntu-16.04-vmi
 
   outputs:
     galaxy_url:

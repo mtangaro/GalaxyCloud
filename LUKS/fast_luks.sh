@@ -26,6 +26,8 @@ cryptdev='crypt'
 mountpoint='/export'
 filesystem='ext4'
 
+paranoic=false
+
 # luks ini file
 luks_cryptdev_file='/etc/galaxy/luks-cryptdev.ini'
 
@@ -277,9 +279,10 @@ function wipe_data(){
   echo "$info [$STAT] Wiping disk data by overwriting the entire drive with random data"
   echo "$info [$STAT] This might take time depending on the size & your machine!"
 
-  #dd if=/dev/zero of=/dev/mapper/${cryptdev} bs=1M  status=progress >> "$LOGFILE" 2>&1
-  pv -tpreb /dev/zero | dd of=/dev/mapper/${cryptdev} bs=1M status=progress >> "$LOGFILE" 2>&1
-  echo "\n$debug [$STAT] Block file /dev/mapper/${cryptdev} created." >> "${LOGFILE}" 2>&1
+  #dd if=/dev/zero of=/dev/mapper/${cryptdev} bs=1M  status=progress
+  pv -tpreb /dev/zero | dd of=/dev/mapper/${cryptdev} bs=1M status=progress;
+
+  echo "$debug [$STAT] Block file /dev/mapper/${cryptdev} created."
   echo "$debug [$STAT] Wiping done."
 }
 
@@ -290,7 +293,7 @@ function create_fs(){
   mkfs.${filesystem} /dev/mapper/${cryptdev} #Do not redirect mkfs, otherwise no interactive mode!
   if [ $? != 0 ]; then
     echo "$error [$STAT] While creating ${filesystem} filesystem. Please check logs: $LOGFILE"
-    echo "$error [$STAT] Command mkfs failed!" >> "$LOGFILE" 2>&1
+    echo "$error [$STAT] Command mkfs failed!"
     unlock
     exit 1
   fi
@@ -328,8 +331,8 @@ function create_cryptdev_ini_file(){
   echo "filesystem = ${filesystem}" >> ${luks_cryptdev_file}
 
   # Update Log file
-  dmsetup info /dev/mapper/${cryptdev} >> "$LOGFILE" 2>&1
-  cryptsetup luksDump $device >> "$LOGFILE" 2>&1
+  dmsetup info /dev/mapper/${cryptdev}
+  cryptsetup luksDump $device
 }
 
 #____________________________________
@@ -337,7 +340,7 @@ function end_encrypt_procedure(){
   echo ""
   # send signal to unclok waiting condition for automation software (e.g Ansible)
   echo "LUKS encryption completed." > $SUCCESS_FILE # WARNING DO NOT MODFIFY THIS LINE, THIS IS A CONTROL STRING FOR ANSIBLE
-  echo "$info [$STAT] SUCCESSFUL. You will be automatically kicked out by this server. Galaxy will be automatically installed."
+  echo "$info [$STAT] SUCCESSFUL."
 }
 
 #____________________________________
@@ -359,18 +362,29 @@ function encrypt(){
   # Check status
   encryption_status >> "$LOGFILE" 2>&1
   
-  # Wipe data for security
-  # WARNING This is going take time, depending on VM storage. Currently commented out
-  #wipe_data
+  # Run this in background. 
+  (
+    # Wipe data for security
+    # WARNING This is going take time, depending on VM storage. Currently commented out
+    if [[ $paranoic == true ]]; then
+      wipe_data >> "$LOGFILE" 2>&1
+    fi
 
-  # Create filesystem
-  create_fs
+    # Create filesystem
+    create_fs >> "$LOGFILE" 2>&1
 
-  # Mount volume
-  mount_vol
+    # Mount volume
+    mount_vol >> "$LOGFILE" 2>&1
 
-  # Create ini file
-  create_cryptdev_ini_file
+    # Create ini file
+    create_cryptdev_ini_file >> "$LOGFILE" 2>&1
+
+    # LUKS encryption finished. Print end dialogue.
+    end_encrypt_procedure >> "$LOGFILE" 2>&1
+
+    # Unlock once done.
+    unlock >> "$LOGFILE" 2>&1
+  ) &
 }
 
 ################################################################################
@@ -411,6 +425,8 @@ do
     -i|--interactive) INTERACTIVE=YES;; #TODO implement interactive mode
 
     --default) DEFAULT=YES;;
+
+    --paranoic-mode) paranoic=true;;
 
     -h|--help) HELP=YES;;
 
@@ -454,9 +470,3 @@ check_cryptsetup
 
 # Encrypt volume
 encrypt
-
-# LUKS encryption finished. Print end dialogue.
-end_encrypt_procedure
-
-# Unlock once done.
-unlock >> "$LOGFILE" 2>&1

@@ -18,7 +18,7 @@ topology_template:
     wn_num_min:
       type: integer
       description: Minimum number of WNs in the elastic cluster
-      default: 0
+      default: 1
     fe_instance_flavor:
       type: string
       description: front end flavor (num_cpu, memory, disk)
@@ -48,11 +48,11 @@ topology_template:
     version:
       type: string
       description: galaxy version to install
-      default: master
+      default: release_17.09
     instance_description:
       type: string
       description: galaxy instance description
-      default: INDIGO Galaxy test
+      default: Elastic SLURM cluster
     instance_key_pub:
       type: string
       description: galaxy instance ssh public key
@@ -194,8 +194,7 @@ topology_template:
             instance_type: { get_input: fe_instance_flavor }
         os:
           properties:
-            image: centos-7-1708-galaxy-slurm
-            #image: centos-7-1708-galaxy-base
+            image: centos-7-1708-galaxy-base
             #image: ubuntu-16.04-vmi
       requirements:
         # contextually this can only be a relationship type
@@ -256,9 +255,10 @@ topology_template:
             instance_type: { get_input: wn_instance_flavor }
         os:
           properties:
-            image: centos-7-1708-galaxy-slurm
-            #image: centos-7-1708-galaxy-base
+            image: centos-7-1708-galaxy-base
             #image: ubuntu-16.04-vmi
+      requirements:
+        - dependency: galaxy_portal # this is needed to correctly share /export after its configuration on WNs
 
   outputs:
     galaxy_url:

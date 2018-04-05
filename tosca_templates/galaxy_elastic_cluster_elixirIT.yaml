@@ -62,6 +62,23 @@ topology_template:
       description: path to store galaxy data
       default: /export
 
+    galaxy_storage_type:
+      type: string
+      description: Storage type (Iaas Block Storage, Onedata, Filesystem encryption)
+      default: "IaaS"
+    userdata_provider:
+      type: string
+      description: default OneProvider
+      default: "not_a_privder_url"
+    userdata_token:
+      type: string
+      description: Access token for onedata space
+      default: "not_a_token"
+    userdata_space:
+      type: string
+      description: Onedata space
+      default: "galaxy"
+
     flavor:
       type: string
       description: Galaxy flavor for tools installation
@@ -128,8 +145,12 @@ topology_template:
         - wn: wn_node
 
     galaxy_portal:
-      type: tosca.nodes.indigo.GalaxyPortal
+      type: tosca.nodes.indigo.GalaxyPortalAndStorage
       properties:
+        os_storage: { get_input: galaxy_storage_type }
+        token: { get_input: userdata_token }
+        provider: { get_input: userdata_provider }
+        space: { get_input: userdata_space }
         admin_email: { get_input: admin_email }
         admin_api_key: { get_input: admin_api_key }
         version: { get_input: version }

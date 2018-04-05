@@ -13,12 +13,13 @@ topology_template:
     wn_num_max:
       type: integer
       description: Maximum number of WNs in the elastic cluster
-      default: 1
+      default: 2
       required: yes
     wn_num_min:
       type: integer
       description: Minimum number of WNs in the elastic cluster
-      default: 1
+      default: 0
+      required: yes
     fe_instance_flavor:
       type: string
       description: front end flavor (num_cpu, memory, disk)
@@ -30,7 +31,7 @@ topology_template:
     storage_size:
       type: string
       description: storage memory required for the instance
-      default: 100 GB
+      default: 50 GB
     hybrid:
       type: boolean
       description: Flag to specify that this cluster will work in an hybrid environment

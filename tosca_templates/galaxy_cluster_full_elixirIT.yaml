@@ -24,7 +24,7 @@ topology_template:
     storage_size:
       type: string
       description: storage memory required for the instance
-      default: 10 GB
+      default: 50 GB
     hybrid:
       type: boolean
       description: Flag to specify that this cluster will work in an hybrid environment
@@ -197,7 +197,6 @@ topology_template:
         os:
           properties:
             image: centos-7-1708-galaxy-base
-            #image: centos-7-1708-vmi
             #image: ubuntu-16.04-vmi
       requirements:
         # contextually this can only be a relationship type
@@ -255,7 +254,6 @@ topology_template:
         os:
           properties:
             image: centos-7-1708-galaxy-base
-            #image: centos-7-1708-vmi
             #image: ubuntu-16.04-vmi
 
   outputs:

@@ -279,8 +279,6 @@ topology_template:
           properties:
             image: centos-7-1708-galaxy-base
             #image: ubuntu-16.04-vmi
-      requirements:
-        - dependency: galaxy_portal # this is needed to correctly share /export after its configuration on WNs
 
   outputs:
     galaxy_url:

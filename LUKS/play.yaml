@@ -13,7 +13,7 @@
     mountpoint: '/export'     # set mount point [default: /export]
     filesystem: 'ext4'        # filesystem [default: ext4] 
 
-    user_passphrase: set_your_password_here
+    user_passphrase: set_your_password_here # A password with at least 8 alphanumeric string
 
   pre_tasks:
     - name: get script
@@ -34,6 +34,6 @@
         - { regexp: "luks_cryptdev_file='/etc/galaxy/luks-cryptdev.ini'", line: "luks_cryptdev_file='/tmp/luks-cryptdev.ini'" }
 
     - name: Encrypt volume
-      shell: 'printf "{{ user_passphrase }}\n{{ user_passphrase }}\n{{ user_passphrase }}\n" | {{ script_path }} --paranoic-mode -c {{ cipher }} -k {{ keysize }} -a {{ hash_algorithm }} -d {{ device }} -m {{ mountpoint }} -f {{ filesystem }}'
+      shell: 'printf "{{ user_passphrase }}\n{{ user_passphrase }}\n" | {{ script_path }} --paranoic-mode -c {{ cipher }} -k {{ keysize }} -a {{ hash_algorithm }} -d {{ device }} -m {{ mountpoint }} -f {{ filesystem }}'
       become_user: root
       become_method: sudo

@@ -35,5 +35,3 @@
 
     - name: Encrypt volume
       shell: 'printf "{{ user_passphrase }}\n{{ user_passphrase }}\n" | {{ script_path }} --paranoic-mode -c {{ cipher }} -k {{ keysize }} -a {{ hash_algorithm }} -d {{ device }} -m {{ mountpoint }} -f {{ filesystem }}'
-      become_user: root
-      become_method: sudo

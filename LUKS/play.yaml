@@ -33,4 +33,5 @@
         - { regexp: "luks_cryptdev_file='/etc/galaxy/luks-cryptdev.ini'", line: "luks_cryptdev_file='/tmp/luks-cryptdev.ini'" }
 
     - name: Encrypt volume
-      shell: 'printf "{{ user_passphrase }}\n{{ user_passphrase }}\n" | {{ script_path }} --paranoic-mode -c {{ cipher }} -k {{ keysize }} -a {{ hash_algorithm }} -d {{ device }} -m {{ mountpoint }} -f {{ filesystem }}'
+      shell: '{{ script_path }} --help'
+      #shell: 'printf "{{ user_passphrase }}\n{{ user_passphrase }}\n" | {{ script_path }} --paranoic-mode -c {{ cipher }} -k {{ keysize }} -a {{ hash_algorithm }} -d {{ device }} -m {{ mountpoint }} -f {{ filesystem }}'

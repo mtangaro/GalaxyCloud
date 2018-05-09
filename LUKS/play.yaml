@@ -1,0 +1,39 @@
+---
+- hosts: localhost
+  connection: local
+
+  vars:
+    script_path: /tmp/fast-luks.sh
+
+    cipher: 'aes-xts-plain64' # set cipher algorithm [default: aes-xts-plain64]
+    keysize: '256'            # set key size [default: 256]
+    hash_algorithm: 'sha256'  # set hash algorithm used for key derivation
+    device: '/dev/vdb'        # set device [default: /dev/vdb]
+    cryptdev: 'cryptdev'      # set crypt device [default: cryptdev]
+    mountpoint: '/export'     # set mount point [default: /export]
+    filesystem: 'ext4'        # filesystem [default: ext4] 
+
+    user_passphrase: set_your_password_here
+
+  pre_tasks:
+    - name: get script
+      get_url:
+        url: 'https://raw.githubusercontent.com/mtangaro/GalaxyCloud/master/LUKS/fast_luks.sh'
+        dest: '{{ script_path }}'
+        mode: a+x
+
+  tasks:
+    - name: edit script for log, pid and config file
+      lineinfile:
+        dest: '{{ script_path }}'
+        regexp: '{{ item.regexp }}'
+        line: '{{ item.line }}'
+      with_items:
+        - { regexp: 'LOGFILE="/var/log/galaxy/luks$now.log"', line: 'LOGFILE="/tmp/luks$now.log"' }
+        - { regexp: 'SUCCESS_FILE="/var/run/fast-luks.success"', line: 'SUCCESS_FILE="/tmp/fast-luks.success"' }
+        - { regexp: "luks_cryptdev_file='/etc/galaxy/luks-cryptdev.ini'", line: "luks_cryptdev_file='/tmp/luks-cryptdev.ini'" }
+
+    - name: Encrypt volume
+      shell: 'printf "{{ user_passphrase }}\n{{ user_passphrase }}\n{{ user_passphrase }}\n" | {{ script_path }} --paranoic-mode -c {{ cipher }} -k {{ keysize }} -a {{ hash_algorithm }} -d {{ device }} -m {{ mountpoint }} -f {{ filesystem }}'
+      become_user: root
+      become_method: sudo

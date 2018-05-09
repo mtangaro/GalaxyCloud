@@ -9,7 +9,6 @@
     keysize: '256'            # set key size [default: 256]
     hash_algorithm: 'sha256'  # set hash algorithm used for key derivation
     device: '/dev/vdb'        # set device [default: /dev/vdb]
-    cryptdev: 'cryptdev'      # set crypt device [default: cryptdev]
     mountpoint: '/export'     # set mount point [default: /export]
     filesystem: 'ext4'        # filesystem [default: ext4] 
 

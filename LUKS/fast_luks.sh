@@ -368,6 +368,8 @@ function encrypt(){
   if [[ $foreground == false ]]; then
 
     # Run this in background. 
+    echo "$info [$STAT] Run script in backgroud."
+
     (
       # Wipe data for security
       # WARNING This is going take time, depending on VM storage. Currently commented out
@@ -391,7 +393,7 @@ function encrypt(){
 
   elif [[ $foreground == true ]]; then
 
-    echo "$info [$STAT] Run script in foreground"
+    echo "$info [$STAT] Run script in foreground."
 
     if [[ $paranoic == true ]]; then wipe_data; fi
     create_fs

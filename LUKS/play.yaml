@@ -12,7 +12,7 @@
     mountpoint: '/export'     # set mount point [default: /export]
     filesystem: 'ext4'        # filesystem [default: ext4] 
 
-    user_passphrase: Not_a_valid_passphrase # A passphrase with at least 8 char long alphanumeric string
+    user_passphrase: Not_a_valid_password # A passphrase with at least 8 char long alphanumeric string
 
   pre_tasks:
     - name: get script

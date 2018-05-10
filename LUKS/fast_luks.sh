@@ -450,7 +450,7 @@ do
     # TODO create a "--password" option to inject password.
     --non-interactive) non_interactive=true;;
 
-    --foreground) foregroud=true;; # run script in foregrond, allowing to use it on ansible playbooks.
+    --foreground) foreground=true;; # run script in foregrond, allowing to use it on ansible playbooks.
 
     --default) DEFAULT=YES;;
 

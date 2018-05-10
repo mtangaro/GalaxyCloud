@@ -14,8 +14,8 @@
 # This is by default for our use-case.
 
 STAT="fast-luks"
-LOGFILE="/var/log/galaxy/luks$now.log"
-SUCCESS_FILE="/var/run/fast-luks.success"
+LOGFILE="/tmp/luks$now.log"
+SUCCESS_FILE="/tmp/fast-luks.success"
 
 # Defaults
 cipher_algorithm='aes-xts-plain64'
@@ -27,9 +27,11 @@ mountpoint='/export'
 filesystem='ext4'
 
 paranoic=false
+non_interactive=false
+foreground=false
 
 # luks ini file
-luks_cryptdev_file='/etc/galaxy/luks-cryptdev.ini'
+luks_cryptdev_file='/tmp/luks-cryptdev.ini'
 
 # lockfile configuration
 LOCKDIR=/var/run/fast_luks
@@ -58,13 +60,14 @@ error="ERROR "$time
 # Intro banner
 # bash generate random 32 character alphanumeric string (upper and lowercase)
 
-NEW_PWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
-
-until [[ $NEW_PWD =~ ^([a-zA-Z+]+[0-9+]+)$ ]]; do
-  NEW_PWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
-done
-
 function intro(){
+
+  NEW_PWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+
+  until [[ $NEW_PWD =~ ^([a-zA-Z+]+[0-9+]+)$ ]]; do
+    NEW_PWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+  done
+
   echo "========================================================="
   echo "                      ELIXIR-Italy"
   echo "               Filesystem encryption script"             
@@ -104,7 +107,7 @@ function lock(){
     if mkdir "${LOCKDIR}" &>/dev/null; then
       # lock succeeded, I'm storing the PID 
       echo "$$" >"${PIDFILE}"
-      echo -e "$info [$STAT] Starting log file."
+      echo -e "\n$info [$STAT] Starting log file."
 
     else
 
@@ -362,43 +365,60 @@ function encrypt(){
   # Check status
   encryption_status >> "$LOGFILE" 2>&1
   
-  # Run this in background. 
-  (
-    # Wipe data for security
-    # WARNING This is going take time, depending on VM storage. Currently commented out
-    if [[ $paranoic == true ]]; then
-      wipe_data >> "$LOGFILE" 2>&1
-    fi
+  if [[ $foreground == false ]]; then
 
-    # Create filesystem
-    create_fs >> "$LOGFILE" 2>&1
+    # Run this in background. 
+    (
+      # Wipe data for security
+      # WARNING This is going take time, depending on VM storage. Currently commented out
+      if [[ $paranoic == true ]]; then wipe_data >> "$LOGFILE" 2>&1; fi
+    
+      # Create filesystem
+      create_fs >> "$LOGFILE" 2>&1
+    
+      # Mount volume
+      mount_vol >> "$LOGFILE" 2>&1
+    
+      # Create ini file
+      create_cryptdev_ini_file >> "$LOGFILE" 2>&1
+    
+      # LUKS encryption finished. Print end dialogue.
+      end_encrypt_procedure >> "$LOGFILE" 2>&1
+    
+      # Unlock once done.
+      unlock >> "$LOGFILE" 2>&1
+    ) &
 
-    # Mount volume
-    mount_vol >> "$LOGFILE" 2>&1
+  elif [[ $foreground == true ]]; then
 
-    # Create ini file
-    create_cryptdev_ini_file >> "$LOGFILE" 2>&1
+    echo "$info [$STAT] Run script in foreground"
 
-    # LUKS encryption finished. Print end dialogue.
-    end_encrypt_procedure >> "$LOGFILE" 2>&1
-
-    # Unlock once done.
+    if [[ $paranoic == true ]]; then wipe_data; fi
+    create_fs
+    mount_vol
+    create_cyptdev_ini_file
+    end_encrypt_procedure
     unlock >> "$LOGFILE" 2>&1
-  ) &
+
+  fi # end foregroud if
+
 }
 
 ################################################################################
 # Main script
 
+# Check if script is run as root
+if [[ $(/usr/bin/id -u) -ne 0 ]]; then
+    echo "$error [$STAT] Not running as root."
+    exit 1
+fi
+
 # Create lock file. Ensure only single instance running.
 lock >> "$LOGFILE" 2>&1
 
-# Print intro
-intro
-
 # If running script with no arguments then loads defaults values.
 if [ $# -lt 1 ]; then
-  echo -e "\nNo inputs. Using defaults values:" >> "$LOGFILE" 2>&1
+  echo -e "\n$error [$STAT] No inputs. Using defaults values:" >> "$LOGFILE" 2>&1
   info >> "$LOGFILE" 2>&1
 fi
 
@@ -422,13 +442,19 @@ do
 
     -f|--filesystem) filesystem="$2"; shift ;;
 
-    -i|--interactive) INTERACTIVE=YES;; #TODO implement interactive mode
+    --paranoic-mode) paranoic=true;;
+
+    # TODO implement non-interactive mode. Allow to pass password from command line.
+    # TODO Currently it just avoid to print intro and deny random password generation.
+    # TODO Allow to inject passphrase from command line (not secure)
+    # TODO create a "--password" option to inject password.
+    --non-interactive) non_interactive=true;;
+
+    --foreground) foregroud=true;; # run script in foregrond, allowing to use it on ansible playbooks.
 
     --default) DEFAULT=YES;;
 
-    --paranoic-mode) paranoic=true;;
-
-    -h|--help) HELP=YES;;
+    -h|--help) print_help=true;;
 
     -*) echo >&2 "usage: $0 [--help] [print all options]"
 	exit 1;;
@@ -445,7 +471,7 @@ if [[ -n $1 ]]; then
 fi
 
 # Print Help
-if [ "${HELP}" = "YES" ]
+if [[ $print_help = true ]]
   then
     echo ""
     usage="$(basename "$0"): a bash script to automate LUKS file system encryption.\n
@@ -462,8 +488,13 @@ if [ "${HELP}" = "YES" ]
            -f, --filesystem		\tset filesystem [default: ext4]\n
            --default			\t\tload default values\n"
     echo -e $usage
-    exit
+    echo -e "\n$info [$STAT] Just printing help." >> "$LOGFILE" 2>&1
+    unlock
+    exit 0
 fi
+
+# Print intro
+if [[ $non_interactive == false ]]; then intro; fi
 
 # Check if the required applications are installed
 check_cryptsetup

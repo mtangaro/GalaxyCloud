@@ -4,7 +4,8 @@
 # Helps you mount and unmount LUKS partitions.
 #
 # Author: Marco Tangaro
-# Mail: ma.tangaro@ibiom.cnr.it 
+# Mail: ma.tangaro@ibiom.cnr.it
+# Home institution: IBIOM-CNR, ELIXIR-ITALY
 #
 # Please find the original script here:
 # https://github.com/JohnTroony/LUKS-OPs/blob/master/luks-ops.sh

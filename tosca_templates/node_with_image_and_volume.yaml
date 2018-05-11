@@ -38,9 +38,27 @@ topology_template:
             # Currently this example uses the IM URI convention
             # used in disk.0.image.url
             # see: http://imdocs.readthedocs.org/en/latest/radl.html?highlight=uri#system-features
-            #image: ubuntu-16.04-vmi
-            image: centos-7-1708-vmi
+            image: ubuntu-16.04-vmi
+            #image: centos-7-1708-vmi
+      requirements:
+        # contextually this can only be a relationship type
+        - local_storage:
+            # capability is provided by Compute Node Type
+            node: my_block_storage
+            capability: tosca.capabilities.Attachment
+            relationship:
+              type: tosca.relationships.AttachesTo
+              properties:
+                #location: /export
+                device: hdb
+
+    my_block_storage:
+      type: tosca.nodes.BlockStorage
+      properties:
+        size: 1 GB
 
   outputs:
     node_ip:
       value: { get_attribute: [ simple_node, public_address, 0 ] }
+    node_creds:
+      value: { get_attribute: [ simple_node, endpoint, credential, 0 ] }

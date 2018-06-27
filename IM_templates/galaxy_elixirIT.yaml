@@ -20,7 +20,7 @@ topology_template:
     storage_size:
       type: string
       description: storage memory required for the instance
-      default: 50 GB 
+      default: 50 GB      
 
     admin_email:
       type: string
@@ -29,7 +29,7 @@ topology_template:
     admin_api_key:
       type: string
       description: key to access the API with admin role
-      default: not_very_secret_api_key
+      default: GALAXY_ADMIN_API_KEY
     user:
       type: string
       description: username to launch the galaxy daemon
@@ -37,7 +37,7 @@ topology_template:
     version:
       type: string
       description: galaxy version to install
-      default: master
+      default: release_17.09
     instance_description:
       type: string
       description: galaxy instance description
@@ -54,7 +54,7 @@ topology_template:
     galaxy_storage_type:
       type: string
       description: Storage type (Iaas Block Storage, Onedata, Filesystem encryption)
-      default: "IaaS"
+      default: "encryption"
     userdata_provider:
       type: string
       description: default OneProvider
@@ -122,7 +122,7 @@ topology_template:
   node_templates:
 
     galaxy:
-      type: tosca.nodes.indigo.GalaxyPortalFastConfig
+      type: tosca.nodes.indigo.GalaxyPortalAndStorage
       properties:
         os_storage: { get_input: galaxy_storage_type }
         token: { get_input: userdata_token }
@@ -134,9 +134,16 @@ topology_template:
         instance_description: { get_input: instance_description }
         instance_key_pub: { get_input: instance_key_pub }
         export_dir: { get_input: export_dir }
-        flavor: { get_input: flavor }
       requirements:
         - lrms: local_lrms
+
+    galaxy_tools:
+      type: tosca.nodes.indigo.GalaxyShedTool
+      properties:
+        flavor: { get_input: flavor }
+        admin_api_key: { get_input: admin_api_key }
+      requirements:
+        - host: galaxy
 
     galaxy_refdata:
       type: tosca.nodes.indigo.GalaxyReferenceData
@@ -155,6 +162,7 @@ topology_template:
         refdata_cvmfs_proxy_port: { get_input: refdata_cvmfs_proxy_port }
       requirements:
         - host: galaxy
+        - dependency: galaxy_tools
 
     # type to describe a Galaxy not using any LRMS but using the local system
     local_lrms:
@@ -168,7 +176,6 @@ topology_template:
         endpoint:
           properties:
             network_name: PUBLIC
-            private_ip: false
             ports:
               http_port:
                 protocol: tcp
@@ -181,13 +188,11 @@ topology_template:
          properties:
            num_cpus: { get_input: number_cpus }
            mem_size: { get_input: memory_size }
-           disk_size: 20 GB
         # Guest Operating System properties
         os:
           properties:
-            #image: ost://cloud.recas.ba.infn.it/d556695b-49a9-4773-8d14-b64800c122df # CentOS 7 1708 Galaxy
-            image: ost://cloud.recas.ba.infn.it/f9156e4c-628c-4e84-a982-591cdb0edf08 # CentOS 7 1708 Galaxy New
-            #image: ost://cloud.recas.ba.infn.it/08836ab9-b2e1-47c4-8384-82252fede8ef # CentOS 7 1708 galaxy-rna-workbench
+            #image: ost://cloud.recas.ba.infn.it/f38d4e87-cc7e-4035-921b-6b200a9ebaee # CentOS 7 1708
+            image: ost://cloud.recas.ba.infn.it/0c4c232d-d90d-43da-b53a-ccbe8a6edc46 # CentOS 7 1708 BASE 
       requirements:
         # contextually this can only be a relationship type
         - local_storage:

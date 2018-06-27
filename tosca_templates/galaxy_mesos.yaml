@@ -1,0 +1,41 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+imports:
+  - indigo_custom_types: https://raw.githubusercontent.com/indigo-dc/tosca-types/master/custom_types.yaml
+
+description: >
+  TOSCA examples for specifying Chronos and Marathon jobs to enable the
+  specification of applications and services in INDIGO.
+
+topology_template:
+
+  node_templates:
+
+    marathon_job:
+      type: tosca.nodes.indigo.Container.Application.Docker.Marathon
+      properties:
+        environment_variables:
+          MYSQL_ROOT_PASSWORD: s3cret
+        constraints:
+          - [hostname, UNIQUE]
+        labels:
+          HAPROXY_GROUP: external
+      artifacts:
+        image:
+          file: mtangaro/galaxycloud
+          type: tosca.artifacts.Deployment.Image.Container.Docker
+      requirements:
+        - host: docker_runtime
+
+    docker_runtime:
+      type: tosca.nodes.indigo.Container.Runtime.Docker
+      capabilities:
+        host:
+          properties:
+            num_cpus: 2
+            mem_size: 4096 MB
+            publish_ports:
+               - protocol: tcp
+                 target: 8306
+                 source: 3306
+            volumes: ['galaxy_export:/export:rw:dvdi:rexray']
